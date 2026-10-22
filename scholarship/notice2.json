@@ -1,0 +1,183 @@
+{
+  "scholarship_name": "Saksham scholarship",
+  "authority": null,
+  "amount_per_year": 50000,
+  "last_date": "2026-09-15",
+  "rules": [
+    {
+      "id": "r1",
+      "field": "course_level",
+      "operator": "==",
+      "value": "undergraduate_degree",
+      "applies_to": "all",
+      "source_text": "The candidate should be admitted to First year of Degree level course OR Second year of Degree level course through lateral entry in any of the AICTE approved Institution of respective year."
+    },
+    {
+      "id": "r2",
+      "field": "current_year_of_study",
+      "operator": "in",
+      "value": [
+        1,
+        2
+      ],
+      "applies_to": "all",
+      "source_text": "The candidate should be admitted to First year of Degree level course OR Second year of Degree level course through lateral entry in any of the AICTE approved Institution of respective year."
+    },
+    {
+      "id": "r3",
+      "field": "admission_type",
+      "operator": "==",
+      "value": "lateral_entry",
+      "applies_to": "all",
+      "condition": {
+        "field": "current_year_of_study",
+        "operator": "==",
+        "value": 2
+      },
+      "source_text": "The candidate should be admitted to First year of Degree level course OR Second year of Degree level course through lateral entry in any of the AICTE approved Institution of respective year."
+    },
+    {
+      "id": "r4",
+      "field": "institution_aicte_approved",
+      "operator": "==",
+      "value": true,
+      "applies_to": "all",
+      "source_text": "The candidate should be admitted to First year of Degree level course OR Second year of Degree level course through lateral entry in any of the AICTE approved Institution of respective year."
+    },
+    {
+      "id": "r5",
+      "field": "disability_percent",
+      "operator": ">=",
+      "value": 40,
+      "applies_to": "all",
+      "source_text": "Specially-abled student, having disability of not less than 40%."
+    },
+    {
+      "id": "r6",
+      "field": "family_income",
+      "operator": "<=",
+      "value": 800000,
+      "applies_to": "all",
+      "source_text": "Family income from all sources should not be more than Rs. 8 lakh per annum during the current financial year. A valid income certificate issued by State /UT Government need to be enclosed."
+    }
+  ],
+  "verify_only": [
+    {
+      "id": "v1",
+      "field": "income_certificate_valid",
+      "note": "The income certificate must be issued by the State/UT Government and cover the current financial year. Ask the student to confirm.",
+      "source_text": "A valid income certificate issued by State /UT Government need to be enclosed."
+    },
+    {
+      "id": "v2",
+      "field": "disability_certificate_valid",
+      "note": "The disability certificate (40% or more) must be issued by the competent authority.",
+      "source_text": "Disability Certificate issued by the competent authority, as prescribed under the scheme"
+    },
+    {
+      "id": "v3",
+      "field": "bank_account_aadhaar_seeded",
+      "note": "The bank account must be Aadhaar-seeded and in the student's own name. Ask the student to confirm.",
+      "source_text": "Aadhaar-seeded Bank Passbook in the student's own name"
+    }
+  ],
+  "unclear": [
+    "Scholarship name, authority, amount and last date are not in this section. Fill them in from elsewhere in the PDF.",
+    "It is unclear whether 'Degree level course' covers only degrees (B.E./B.Tech) or diplomas too. Rule r1 currently allows only undergraduate_degree.",
+    "No condition on academic year, age limit, gender, category or domicile was found in this section."
+  ],
+  "required_documents": [
+    {
+      "id": "d1",
+      "doc_key": "application_form_printout",
+      "name": "Printout of Application Form",
+      "required": true,
+      "note": "This is not a student document; it is the printout taken after submitting the application.",
+      "source_text": "Printout of Application Form."
+    },
+    {
+      "id": "d2",
+      "doc_key": "domicile_certificate",
+      "name": "Domicile / Residence Certificate",
+      "required": true,
+      "source_text": "Domicile / Residence Certificate"
+    },
+    {
+      "id": "d3",
+      "doc_key": "caste_category_certificate",
+      "name": "Caste/Category Certificate",
+      "required": "if_applicable",
+      "source_text": "Caste/Category Certificate, if applicable"
+    },
+    {
+      "id": "d4",
+      "doc_key": "disability_certificate",
+      "name": "Disability Certificate",
+      "required": true,
+      "source_text": "Disability Certificate issued by the competent authority, as prescribed under the scheme"
+    },
+    {
+      "id": "d5",
+      "doc_key": "family_income_certificate",
+      "name": "Family Income Certificate",
+      "required": true,
+      "source_text": "FamilyIncome Certificate issued by the competent State Government authority"
+    },
+    {
+      "id": "d6",
+      "doc_key": "class10_marksheet",
+      "name": "10th Marksheet/Certificate",
+      "required": true,
+      "source_text": "10th Markshee/Certificate"
+    },
+    {
+      "id": "d7",
+      "doc_key": "class12_marksheet",
+      "name": "12th Marksheet/Certificate",
+      "required": "if_applicable",
+      "note": "The notice says 'as applicable'. Lateral entry students may have a diploma instead of a 12th marksheet.",
+      "source_text": "12th Marksheet/Certificate – as applicable"
+    },
+    {
+      "id": "d8",
+      "doc_key": "bonafide_certificate",
+      "name": "Bonafide/Institute Certificate",
+      "required": "if_required",
+      "note": "Issued by the Principal/Head of Institution.",
+      "source_text": "Bonafide/Institute Certificate issued by the Principal/Head of Institution, if required"
+    },
+    {
+      "id": "d9",
+      "doc_key": "tuition_fee_receipt",
+      "name": "Current Year Tuition Fee Receipt",
+      "required": true,
+      "source_text": "Current Year Tuition Fee Receipt"
+    },
+    {
+      "id": "d10",
+      "doc_key": "bank_passbook",
+      "name": "Aadhaar-seeded Bank Passbook (in the student's own name)",
+      "required": true,
+      "must_show": [
+        "Account Number",
+        "IFSC Code",
+        "Account Holder Name"
+      ],
+      "source_text": "Aadhaar-seeded Bank Passbook in the student's own name, showing: a. Account Number b. IFSC Code c. Account Holder Name"
+    },
+    {
+      "id": "d11",
+      "doc_key": "parent_declaration",
+      "name": "Parent's Declaration/Undertaking",
+      "required": "if_prescribed",
+      "source_text": "Parent's Declaration/Undertaking regarding correctness of information, if prescribed"
+    },
+    {
+      "id": "d12",
+      "doc_key": "aadhaar_card",
+      "name": "Aadhaar Card of the Student",
+      "required": true,
+      "source_text": "Aadhaar Card of the Student"
+    }
+  ]
+}
