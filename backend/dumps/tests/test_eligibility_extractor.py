@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 import httpx
 from google.genai import errors
 
-from scraper.eligibility_extractor import (
+from backend.dumps.scraper.eligibility_extractor import (
     DEFAULT_GEMINI_MODEL,
     ELIGIBILITY_RESPONSE_SCHEMA,
     EligibilityResponseError,
@@ -18,7 +18,7 @@ from scraper.eligibility_extractor import (
     extract_eligibility,
     validate_eligibility_response,
 )
-from scraper.pdf_extractor import ExtractedPDFText, PDFPageText
+from backend.dumps.scraper.pdf_extractor import ExtractedPDFText, PDFPageText
 
 
 def example_document():

@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
-from scraper.fetch import NSP_LISTING_URL
+from backend.dumps.scraper.fetch import NSP_LISTING_URL
 
 
 NSP_CARD_SELECTOR = "div.col-md-10"

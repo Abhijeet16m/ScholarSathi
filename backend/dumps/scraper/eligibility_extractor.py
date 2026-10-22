@@ -9,7 +9,7 @@ import httpx
 from dotenv import load_dotenv
 from google.genai import errors, types
 
-from scraper.pdf_extractor import ExtractedPDFText
+from backend.dumps.scraper.pdf_extractor import ExtractedPDFText
 
 
 DEFAULT_GEMINI_MODEL = "gemini-flash-latest"

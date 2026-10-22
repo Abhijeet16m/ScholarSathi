@@ -3,9 +3,9 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
-from scraper.fetch import PageFetchError
-from scraper.parser import NoScholarshipCardsError
-from scraper.pipeline import CardResult, PipelineConfigurationError, PipelineReport, main
+from backend.dumps.scraper.fetch import PageFetchError
+from backend.dumps.scraper.parser import NoScholarshipCardsError
+from backend.dumps.scraper.pipeline import CardResult, PipelineConfigurationError, PipelineReport, main
 
 
 class PipelineCliTests(unittest.TestCase):

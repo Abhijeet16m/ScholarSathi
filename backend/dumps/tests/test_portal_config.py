@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 from psycopg.types.json import Jsonb
 
-from scraper.portal_config import (
+from backend.dumps.scraper.portal_config import (
     NSP_PORTAL_CONFIG,
     PortalConfigValidationError,
     get_portal_config,

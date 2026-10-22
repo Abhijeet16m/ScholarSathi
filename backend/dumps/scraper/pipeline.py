@@ -8,12 +8,12 @@ from dataclasses import dataclass
 from typing import Any, Callable, Mapping
 from urllib.parse import urlsplit, urlunsplit
 
-from scraper.eligibility_extractor import extract_eligibility
-from scraper.fetch import fetch_html
-from scraper.parser import parse_listing_html
-from scraper.pdf_extractor import extract_pdf_text
-from scraper.portal_config import get_portal_config
-from scraper.scholarship_repository import get_content_hash, upsert_scholarship_with_rules
+from backend.dumps.scraper.eligibility_extractor import extract_eligibility
+from backend.dumps.scraper.fetch import fetch_html
+from backend.dumps.scraper.parser import parse_listing_html
+from backend.dumps.scraper.pdf_extractor import extract_pdf_text
+from backend.dumps.scraper.portal_config import get_portal_config
+from backend.dumps.scraper.scholarship_repository import get_content_hash, upsert_scholarship_with_rules
 
 
 DETAIL_WORDS = {"detail", "details"}

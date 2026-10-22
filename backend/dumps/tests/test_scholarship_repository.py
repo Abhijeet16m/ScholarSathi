@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 from psycopg.types.json import Jsonb
 
-from scraper.scholarship_repository import (
+from backend.dumps.scraper.scholarship_repository import (
     ScholarshipRepositoryError,
     upsert_scholarship_with_rules,
 )

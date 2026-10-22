@@ -1,6 +1,6 @@
 import unittest
 
-from scraper.parser import NoScholarshipCardsError, parse_listing_html
+from backend.dumps.scraper.parser import NoScholarshipCardsError, parse_listing_html
 
 
 class ParseListingHtmlTests(unittest.TestCase):

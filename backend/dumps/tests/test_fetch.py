@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import requests
 
-from scraper.fetch import (
+from backend.dumps.scraper.fetch import (
     DEFAULT_TIMEOUT_SECONDS,
     NSP_LISTING_URL,
     PageFetchError,

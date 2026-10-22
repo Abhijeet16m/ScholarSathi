@@ -12,8 +12,8 @@ from dotenv import load_dotenv
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from scraper.fetch import NSP_LISTING_URL
-from scraper.parser import NSP_CARD_SELECTOR, NSP_TITLE_SELECTOR
+from backend.dumps.scraper.fetch import NSP_LISTING_URL
+from backend.dumps.scraper.parser import NSP_CARD_SELECTOR, NSP_TITLE_SELECTOR
 
 
 REQUIRED_SELECTORS = ("scholarship_card", "title", "fields", "document_links")

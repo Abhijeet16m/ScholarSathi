@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import Mock, call
 
-from scraper.pdf_extractor import ExtractedPDFText, PDFPageText
-from scraper.pipeline import run_nsp_pipeline
-from scraper.portal_config import NSP_PORTAL_CONFIG
+from backend.dumps.scraper.pdf_extractor import ExtractedPDFText, PDFPageText
+from backend.dumps.scraper.pipeline import run_nsp_pipeline
+from backend.dumps.scraper.portal_config import NSP_PORTAL_CONFIG
 
 
 DETAIL_URL = "https://scholarships.gov.in/scheme/example"
@@ -161,7 +161,7 @@ class PipelineTests(unittest.TestCase):
 
     @staticmethod
     def _hash_for(item):
-        from scraper.pipeline import _content_hash, _normalized_fields, _normalized_links
+        from backend.dumps.scraper.pipeline import _content_hash, _normalized_fields, _normalized_links
 
         return _content_hash(
             item,

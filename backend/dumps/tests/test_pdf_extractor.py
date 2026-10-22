@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import requests
 from pypdf import PdfWriter
 
-from scraper.pdf_extractor import (
+from backend.dumps.scraper.pdf_extractor import (
     EmptyPDFTextError,
     InvalidPDFError,
     PDFDownloadError,
