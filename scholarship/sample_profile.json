@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Dummy Student A (OBC, income 90k)",
+    "gender": "female",
+    "category": "OBC",
+    "family_income": 90000,
+    "disability_percent": 0,
+    "domicile_state": "Chhattisgarh",
+    "has_permanent_caste_certificate": true,
+    "nsp_otr_registered": true,
+    "class10_school_type": "government",
+    "class12_school_type": "government",
+    "class10_regular_student": true,
+    "class12_regular_student": true,
+    "current_year_of_study": 1,
+    "admission_academic_year": "2026-27",
+    "is_first_ug_course": true,
+    "course_level": "undergraduate_degree",
+    "course_duration_years": 4,
+    "institution_aicte_approved": true,
+    "documents_have": [
+      "aadhaar_card",
+      "bank_passbook",
+      "class10_marksheet",
+      "class12_marksheet",
+      "caste_category_certificate",
+      "family_income_certificate",
+      "domicile_certificate",
+      "nsp_otr_number"
+    ]
+  },
+  {
+    "name": "Dummy Student B (General, male, MP, income 3 lakh)",
+    "gender": "male",
+    "category": "General",
+    "family_income": 300000,
+    "disability_percent": 0,
+    "domicile_state": "Madhya Pradesh",
+    "current_year_of_study": 2,
+    "course_level": "undergraduate_degree",
+    "documents_have": ["aadhaar_card"]
+  },
+  {
+    "name": "Dummy Student C (SC, income 2 lakh)",
+    "gender": "male",
+    "category": "SC",
+    "family_income": 200000,
+    "disability_percent": 0,
+    "domicile_state": "Chhattisgarh",
+    "has_permanent_caste_certificate": true,
+    "nsp_otr_registered": true,
+    "current_year_of_study": 2,
+    "course_level": "undergraduate_degree",
+    "institution_aicte_approved": true,
+    "documents_have": [
+      "aadhaar_card",
+      "bank_passbook",
+      "caste_category_certificate",
+      "domicile_certificate",
+      "nsp_otr_number"
+    ]
+  },
+  {
+    "name": "Dummy Student D (SC, income 3 lakh)",
+    "gender": "female",
+    "category": "SC",
+    "family_income": 300000,
+    "disability_percent": 0,
+    "domicile_state": "Chhattisgarh",
+    "has_permanent_caste_certificate": true,
+    "nsp_otr_registered": true,
+    "current_year_of_study": 2,
+    "course_level": "undergraduate_degree",
+    "institution_aicte_approved": true,
+    "documents_have": ["aadhaar_card", "caste_category_certificate"]
+  },
+  {
+    "name": "Dummy Student E (girl, government school, 1st year, no category data)",
+    "gender": "female",
+    "class10_school_type": "government",
+    "class12_school_type": "government",
+    "class10_regular_student": true,
+    "class12_regular_student": true,
+    "current_year_of_study": 1,
+    "admission_academic_year": "2026-27",
+    "is_first_ug_course": true,
+    "course_level": "undergraduate_degree",
+    "course_duration_years": 3,
+    "disability_percent": 0,
+    "documents_have": ["aadhaar_card", "class10_marksheet", "class12_marksheet"]
+  }
+]
