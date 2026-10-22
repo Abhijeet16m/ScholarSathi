@@ -1,0 +1,166 @@
+{
+  "scholarship_name": "Azim Premji Foundation Scholarship",
+  "amount_per_year": 30000,
+  "last_date": "2026-08-31",
+  "rules": [
+    {
+      "id": "r1",
+      "field": "gender",
+      "operator": "==",
+      "value": "female",
+      "applies_to": "all",
+      "source_text": "The applicant must be a girl student."
+    },
+    {
+      "id": "r2",
+      "field": "class10_school_type",
+      "operator": "==",
+      "value": "government",
+      "applies_to": "all",
+      "source_text": "She must have passed Class 10 and Class 12 as a regular student from a government school/college."
+    },
+    {
+      "id": "r3",
+      "field": "class12_school_type",
+      "operator": "==",
+      "value": "government",
+      "applies_to": "all",
+      "source_text": "She must have passed Class 10 and Class 12 as a regular student from a government school/college."
+    },
+    {
+      "id": "r4",
+      "field": "class10_regular_student",
+      "operator": "==",
+      "value": true,
+      "applies_to": "all",
+      "source_text": "She must have passed Class 10 and Class 12 as a regular student from a government school/college."
+    },
+    {
+      "id": "r5",
+      "field": "class12_regular_student",
+      "operator": "==",
+      "value": true,
+      "applies_to": "all",
+      "source_text": "She must have passed Class 10 and Class 12 as a regular student from a government school/college."
+    },
+    {
+      "id": "r6",
+      "field": "current_year_of_study",
+      "operator": "==",
+      "value": 1,
+      "applies_to": "all",
+      "source_text": "She must be taking admission to the 1st year of an undergraduate degree/diploma during the academic year 2026–27."
+    },
+    {
+      "id": "r7",
+      "field": "admission_academic_year",
+      "operator": "==",
+      "value": "2026-27",
+      "applies_to": "all",
+      "source_text": "She must be taking admission to the 1st year of an undergraduate degree/diploma during the academic year 2026–27."
+    },
+    {
+      "id": "r8",
+      "field": "is_first_ug_course",
+      "operator": "==",
+      "value": true,
+      "applies_to": "all",
+      "source_text": "She must be pursuing her first undergraduate degree/diploma."
+    },
+    {
+      "id": "r9",
+      "field": "course_level",
+      "operator": "in",
+      "value": [
+        "undergraduate_degree",
+        "undergraduate_diploma"
+      ],
+      "applies_to": "all",
+      "source_text": "The course should be a recognised undergraduate degree/diploma of 2–5 years."
+    },
+    {
+      "id": "r10",
+      "field": "course_duration_years",
+      "operator": ">=",
+      "value": 2,
+      "applies_to": "all",
+      "source_text": "The course should be a recognised undergraduate degree/diploma of 2–5 years."
+    },
+    {
+      "id": "r11",
+      "field": "course_duration_years",
+      "operator": "<=",
+      "value": 5,
+      "applies_to": "all",
+      "source_text": "The course should be a recognised undergraduate degree/diploma of 2–5 years."
+    }
+  ],
+  "verify_only": [
+    {
+      "id": "v1",
+      "field": "course_is_recognised",
+      "note": "The notice says 'recognised' but does not say who must recognise the course (UGC, AICTE, state board). Ask the student to confirm.",
+      "source_text": "The course should be a recognised undergraduate degree/diploma of 2–5 years."
+    },
+    {
+      "id": "v2",
+      "field": "other_foundation_conditions",
+      "note": "The Foundation's 'other eligibility conditions' are not listed in this text.",
+      "source_text": "The applicant must fulfil all other applicable eligibility conditions prescribed by the Azim Premji Foundation."
+    }
+  ],
+  "required_documents": [
+    {
+      "id": "d1",
+      "doc_key": "passport_photo",
+      "name": "Recent passport-size photograph",
+      "alternatives": null,
+      "source_text": "Recent passport-size photograph"
+    },
+    {
+      "id": "d2",
+      "doc_key": "aadhaar_card",
+      "name": "Aadhaar Card",
+      "alternatives": null,
+      "source_text": "Aadhaar Card"
+    },
+    {
+      "id": "d3",
+      "doc_key": "bank_passbook",
+      "name": "Bank Passbook or Bank Account Statement",
+      "alternatives": [
+        "Bank Passbook",
+        "Bank Account Statement"
+      ],
+      "source_text": "Bank Passbook / Bank Account Statement"
+    },
+    {
+      "id": "d4",
+      "doc_key": "class10_marksheet",
+      "name": "Class 10 Marksheet",
+      "alternatives": null,
+      "source_text": "Class10 Marksheet"
+    },
+    {
+      "id": "d5",
+      "doc_key": "class12_marksheet",
+      "name": "Class 12 Marksheet",
+      "alternatives": null,
+      "source_text": "Class12 Marksheet"
+    },
+    {
+      "id": "d6",
+      "doc_key": "college_admission_proof",
+      "name": "College Admission Proof",
+      "alternatives": [
+        "Bonafide Certificate",
+        "Tuition Fee Receipt"
+      ],
+      "source_text": "College Admission Proof– Bonafide Certificate / Tuition Fee Receipt",
+      "alternatives_keys": [
+        "bonafide_certificate",
+        "tuition_fee_receipt"
+      ]
+    }
+  ]
+}

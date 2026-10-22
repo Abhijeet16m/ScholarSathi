@@ -1,0 +1,179 @@
+{
+  "scholarship_name": "Chhattisgarh Post Matric Scholarship",
+  "authority": null,
+  "issuer_address": "Old Dhamtari Road, P.O. Sejbahar, Mujgahan, Raipur, Chhattisgarh 492015",
+  "amount_per_year": null,
+  "amount_by_condition": [
+  {"amount": 30000, "condition": {"field": "category", "operator": "in", "value": ["SC", "ST"]},
+   "source_text": "yahan notice ki wo line jisme SC/ST ki amount likhi hai"},
+  {"amount":21800, "condition": {"field": "category", "operator": "==", "value": "OBC"},
+   "source_text": "yahan notice ki wo line jisme OBC ki amount likhi hai"}
+],
+  "last_date": "2026-09-30",
+  "rules": [
+    {
+      "id": "r1",
+      "field": "category",
+      "operator": "in",
+      "value": [
+        "SC",
+        "ST",
+        "OBC"
+      ],
+      "applies_to": "all",
+      "source_text": "The student should belong to SC, ST or OBC category."
+    },
+    {
+      "id": "r2",
+      "field": "family_income",
+      "operator": "<=",
+      "value": 250000,
+      "applies_to": [
+        "SC",
+        "ST"
+      ],
+      "condition": {
+        "field": "category",
+        "operator": "in",
+        "value": [
+          "SC",
+          "ST"
+        ]
+      },
+      "source_text": "For SC/ST students, the annual parental/family income should not exceed Rs. 2.50 lakh per annum."
+    },
+    {
+      "id": "r3",
+      "field": "family_income",
+      "operator": "<=",
+      "value": 100000,
+      "applies_to": [
+        "OBC"
+      ],
+      "condition": {
+        "field": "category",
+        "operator": "==",
+        "value": "OBC"
+      },
+      "source_text": "For OBC students, the annual parental/family income should not exceed Rs. 1.00 lakh per annum."
+    },
+    {
+      "id": "r4",
+      "field": "has_permanent_caste_certificate",
+      "operator": "==",
+      "value": true,
+      "applies_to": "all",
+      "source_text": "The student should possess a valid Permanent Caste Certificate issued by the competent authority."
+    },
+    {
+      "id": "r5",
+      "field": "domicile_state",
+      "operator": "==",
+      "value": "Chhattisgarh",
+      "applies_to": "all",
+      "source_text": "The student should have a valid Chhattisgarh Domicile/Residence Certificate, as applicable."
+    },
+    {
+      "id": "r6",
+      "field": "nsp_otr_registered",
+      "operator": "==",
+      "value": true,
+      "applies_to": "all",
+      "source_text": "For SC, ST and OBC applicants, NSP One Time Registration (OTR) is mandatory for applying for the Chhattisgarh Post Matric Scholarship."
+    }
+  ],
+  "verify_only": [
+    {
+      "id": "v1",
+      "field": "caste_certificate_valid",
+      "note": "The caste certificate must be valid and issued by the competent authority. Ask the student to confirm.",
+      "source_text": "The student should possess a valid Permanent Caste Certificate issued by the competent authority."
+    },
+    {
+      "id": "v2",
+      "field": "previous_year_result_available",
+      "note": "The previous year's marksheet/result is needed 'as required'. Ask the student whether they have it.",
+      "source_text": "The student should have the previous year's examination result/ marksheet as required for the scholarship application."
+    },
+    {
+      "id": "v3",
+      "field": "bank_account_aadhaar_seeded",
+      "note": "The bank account must be active and Aadhaar-seeded to receive the scholarship through PFMS. Ask the student to confirm.",
+      "source_text": "The student's bank account must be active and Aadhaar-seeded for recciving the scholarship amount through PFMS"
+    }
+  ],
+  "unclear": [
+    "The scholarship amount and the issuing authority are not in this section. Check the PDF to see whether the address at the end (Old Dhamtari Road, Raipur) is the issuer's or only a contact address.",
+    "The domicile rule says 'as applicable', so some students may be exempt. The notice does not say who, so r5 currently applies to everyone.",
+    "No condition on course, year, marks, gender or age was found in this section.",
+    "The notice does not mention the creamy layer for OBC students."
+  ],
+  "required_documents": [
+    {
+      "id": "d1",
+      "doc_key": "application_form_printout",
+      "name": "Print out of Application Form",
+      "required": true,
+      "note": "This is not a student document; it is the printout taken after submitting the application.",
+      "source_text": "Print out of Application Form."
+    },
+    {
+      "id": "d2",
+      "doc_key": "domicile_certificate",
+      "name": "Chhattisgarh Domicile/Residence Certificate",
+      "required": true,
+      "source_text": "Chhattisgarh Domicile/Residence Certificate"
+    },
+    {
+      "id": "d3",
+      "doc_key": "caste_category_certificate",
+      "name": "Permanent Caste Certificate",
+      "required": true,
+      "source_text": "Permanent Caste Certificate"
+    },
+    {
+      "id": "d4",
+      "doc_key": "family_income_certificate",
+      "name": "Family Income Certificate",
+      "required": true,
+      "source_text": "Family Income Certificate"
+    },
+    {
+      "id": "d5",
+      "doc_key": "bank_passbook",
+      "name": "Aadhaar-seeded Bank Passbook of the Student",
+      "required": true,
+      "source_text": "Aadhaar-seeded BankPassbook of the Student"
+    },
+    {
+      "id": "d6",
+      "doc_key": "nsp_otr_number",
+      "name": "NSP OTR Number",
+      "required": true,
+      "note": "This is a number, not a physical document.",
+      "source_text": "NSP OTR Number"
+    },
+    {
+      "id": "d7",
+      "doc_key": "previous_year_marksheet",
+      "name": "Previous Year Marksheet/Examination Result",
+      "required": true,
+      "source_text": "Previous Year Marksheet/Examination Result"
+    },
+    {
+      "id": "d8",
+      "doc_key": "tuition_fee_receipt",
+      "name": "Current Year Fee Receipt",
+      "required": "if_applicable",
+      "note": "The notice says 'fee receipt'. Treated as the same as Notice 2's 'tuition fee receipt', so it uses the same doc_key.",
+      "source_text": "Current Year Fee Receipt, as applicable"
+    },
+    {
+      "id": "d9",
+      "doc_key": "aadhaar_card",
+      "name": "Aadhaar Card of the Student",
+      "required": true,
+      "source_text": "Aadhaar Card of the Student"
+    }
+  ]
+}
