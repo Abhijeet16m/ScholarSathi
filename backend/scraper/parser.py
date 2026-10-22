@@ -31,13 +31,15 @@ def _add_field(fields: dict, label: str, value: str) -> None:
 
 
 def _link_kind(label: str, href: str) -> str:
-    text = f"{label} {href}".casefold()
+    clean_label = label.casefold()
+    clean_href = href.casefold()
+    text = f"{clean_label} {clean_href}"
+    if "faq" in clean_label or "frequently asked" in clean_label or "/faq/" in clean_href or clean_href.endswith("_f.pdf"):
+        return "faq"
     if any(word in text for word in ("apply", "application", "student login")):
         return "application"
     if any(word in text for word in ("specification", "guideline", "scheme")):
         return "specification"
-    if "faq" in text or "frequently asked" in text:
-        return "faq"
     return "document"
 
 

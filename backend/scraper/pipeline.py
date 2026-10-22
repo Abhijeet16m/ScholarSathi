@@ -112,12 +112,16 @@ def _identity_url(record: Mapping[str, Any], portal_host: str) -> tuple[str | No
         if not isinstance(link, Mapping) or not link.get("url"):
             continue
         url = str(link["url"])
-        text = f"{link.get('label', '')} {url}".casefold()
+        label = str(link.get("label", "")).casefold()
         path = urlsplit(url).path.casefold()
+        link_type = str(link.get("type", "")).casefold()
         if (
             path.endswith(".pdf")
             and not path.endswith("/null")
-            and any(word in text for word in GUIDELINE_WORDS)
+            and link_type != "faq"
+            and "faq" not in label
+            and not path.endswith("_f.pdf")
+            and (link_type == "specification" or any(word in f"{label} {url}".casefold() for word in GUIDELINE_WORDS))
             and urlsplit(url).hostname == portal_host
         ):
             guideline_candidates.add(_canonical_url(url))
@@ -135,9 +139,16 @@ def _guideline_pdf_url(record: Mapping[str, Any]) -> tuple[str | None, str | Non
         if not isinstance(link, Mapping) or not link.get("url"):
             continue
         url = str(link["url"])
-        text = f"{link.get('label', '')} {url}".casefold()
-        if urlsplit(url).path.casefold().endswith(".pdf") and any(
-            word in text for word in GUIDELINE_WORDS
+        label = str(link.get("label", "")).casefold()
+        path = urlsplit(url).path.casefold()
+        link_type = str(link.get("type", "")).casefold()
+        if (
+            path.endswith(".pdf")
+            and not path.endswith("/null")
+            and link_type != "faq"
+            and "faq" not in label
+            and not path.endswith("_f.pdf")
+            and (link_type == "specification" or any(word in f"{label} {url}".casefold() for word in GUIDELINE_WORDS))
         ):
             candidates.add(_canonical_url(url))
     if not candidates:
