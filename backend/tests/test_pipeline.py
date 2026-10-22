@@ -101,7 +101,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_missing_or_ambiguous_detail_identity_is_skipped(self):
         missing = record()
-        missing["links"] = [missing["links"][1]]
+        missing["links"] = [missing["links"][2]]
         ambiguous = record()
         ambiguous["links"].append(
             {"label": "Read More", "url": "https://scholarships.gov.in/other", "type": "document"}
@@ -113,6 +113,20 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("no scholarship-specific", report.results[0].reason)
         self.assertIn("multiple scholarship detail URLs", report.results[1].reason)
         self.writer.assert_not_called()
+
+    def test_guideline_pdf_used_as_identity_when_no_html_detail_page_exists(self):
+        nsp_style_card = {
+            "title": "AICTE Pragati Scholarship",
+            "fields": {"Ministry": "AICTE"},
+            "links": [
+                {"label": "Specifications", "url": PDF_URL, "type": "specification"},
+                {"label": "FAQ", "url": "https://scholarships.gov.in/docs/faq.pdf", "type": "faq"},
+            ],
+        }
+        report = self.run_pipeline([nsp_style_card])
+        self.assertEqual(report.results[0].status, "processed")
+        self.assertEqual(report.results[0].source_url, PDF_URL)
+        self.assertEqual(self.writer.call_args.args[0]["source_url"], PDF_URL)
 
     def test_failures_leave_hash_unwritten_and_retry_on_next_run(self):
         for failing_stage in ("pdf", "gemini", "validation", "database"):

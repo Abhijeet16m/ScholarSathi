@@ -62,6 +62,20 @@ class ParseListingHtmlTests(unittest.TestCase):
 
         self.assertEqual(records[0]["fields"]["Category"], ["SC", "ST"])
 
+    def test_extracts_ministry_from_parent_accordion(self):
+        html = """
+        <div class="accordion">
+          <button data-bs-target="#collapseOne0">Ministry of Education</button>
+          <div id="collapseOne0" class="accordion-collapse">
+            <div class="col-md-10">
+              <h6>Scholarship under Ministry</h6>
+            </div>
+          </div>
+        </div>
+        """
+        records = parse_listing_html(html)
+        self.assertEqual(records[0]["fields"].get("Ministry"), "Ministry of Education")
+
     def test_raises_diagnostic_when_no_cards_are_found(self):
         with self.assertRaisesRegex(NoScholarshipCardsError, "No scholarship cards found"):
             parse_listing_html("<html><body><p>Unrecognized page</p></body></html>")

@@ -86,7 +86,7 @@ def _normalized_links(record: Mapping[str, Any]) -> list[dict[str, str]]:
 
 
 def _identity_url(record: Mapping[str, Any], portal_host: str) -> tuple[str | None, str | None]:
-    candidates = set()
+    detail_candidates = set()
     for link in record.get("links", []):
         if not isinstance(link, Mapping) or not link.get("url"):
             continue
@@ -99,12 +99,34 @@ def _identity_url(record: Mapping[str, Any], portal_host: str) -> tuple[str | No
         url = _canonical_url(str(link["url"]))
         if urlsplit(url).hostname != portal_host:
             continue
-        candidates.add(url)
-    if not candidates:
-        return None, "no scholarship-specific official detail URL was found"
-    if len(candidates) != 1:
+        detail_candidates.add(url)
+    if len(detail_candidates) == 1:
+        return next(iter(detail_candidates)), None
+    if len(detail_candidates) > 1:
         return None, "multiple scholarship detail URLs were found; identity is ambiguous"
-    return next(iter(candidates)), None
+
+    # Fallback for portals like NSP where cards do not provide an HTML detail page,
+    # but link directly to official guideline/specification documents.
+    guideline_candidates = set()
+    for link in record.get("links", []):
+        if not isinstance(link, Mapping) or not link.get("url"):
+            continue
+        url = str(link["url"])
+        text = f"{link.get('label', '')} {url}".casefold()
+        path = urlsplit(url).path.casefold()
+        if (
+            path.endswith(".pdf")
+            and not path.endswith("/null")
+            and any(word in text for word in GUIDELINE_WORDS)
+            and urlsplit(url).hostname == portal_host
+        ):
+            guideline_candidates.add(_canonical_url(url))
+
+    if not guideline_candidates:
+        return None, "no scholarship-specific official detail URL was found"
+    if len(guideline_candidates) > 1:
+        return None, "multiple official guideline URLs were found; identity is ambiguous"
+    return next(iter(guideline_candidates)), None
 
 
 def _guideline_pdf_url(record: Mapping[str, Any]) -> tuple[str | None, str | None]:
@@ -129,6 +151,23 @@ def _provider(fields: Mapping[str, Any]) -> str | None:
     for label, value in fields.items():
         if label.casefold() in PROVIDER_LABELS:
             return _clean(value) or None
+    return None
+
+
+def _deadline(fields: Mapping[str, Any]):
+    for label, value in fields.items():
+        label_lower = label.casefold()
+        if any(term in label_lower for term in ("open till", "last date", "deadline")):
+            raw = _clean(value if isinstance(value, str) else value[0] if value else "")
+            match = re.search(r"(\d{2})-(\d{2})-(\d{4})", raw)
+            if match:
+                day, month, year = map(int, match.groups())
+                try:
+                    from datetime import date
+
+                    return date(year, month, day)
+                except ValueError:
+                    pass
     return None
 
 
@@ -160,6 +199,8 @@ def run_nsp_pipeline(
     eligibility_extractor: Callable = extract_eligibility,
     hash_reader: Callable = get_content_hash,
     writer: Callable = upsert_scholarship_with_rules,
+    limit: int | None = None,
+    title_filter: str | None = None,
 ) -> PipelineReport:
     """Fetch NSP, process changed cards, and persist each successful card atomically.
 
@@ -178,6 +219,13 @@ def run_nsp_pipeline(
     base_url = config["base_url"]
     html = fetcher(listing_url)
     records = parser(html, base_url=listing_url)
+    if title_filter:
+        filter_term = title_filter.strip().casefold()
+        records = [
+            r for r in records if filter_term in _clean(r.get("title", "")).casefold()
+        ]
+    if limit is not None and limit > 0:
+        records = records[:limit]
     portal_host = (urlsplit(base_url).hostname or "").casefold()
 
     identity_matches: dict[str, int] = {}
@@ -230,7 +278,7 @@ def run_nsp_pipeline(
                 "provider": _provider(fields),
                 "description": json.dumps(fields, ensure_ascii=False, sort_keys=True),
                 "application_url": _application_url(links),
-                "deadline": None,
+                "deadline": _deadline(fields),
                 "official_pdf_urls": pdf_urls,
             }
             writer(scholarship, eligibility, content_hash, connection=connection)
@@ -295,10 +343,22 @@ def main(argv: list[str] | None = None) -> int:
     argument_parser = argparse.ArgumentParser(
         description="Fetch and process NSP scholarships. Exit 1 if any card fails; skipped cards are non-fatal."
     )
-    argument_parser.parse_args(argv)
+    argument_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Maximum number of cards to process",
+    )
+    argument_parser.add_argument(
+        "--filter",
+        type=str,
+        default=None,
+        help="Only process cards whose title contains this filter text (case-insensitive)",
+    )
+    args = argument_parser.parse_args(argv)
 
     try:
-        report = run_nsp_pipeline()
+        report = run_nsp_pipeline(limit=args.limit, title_filter=args.filter)
     except Exception as exc:
         message = _safe_diagnostic(str(exc))
         print(f"NSP pipeline failed ({type(exc).__name__}): {message}", file=sys.stderr)

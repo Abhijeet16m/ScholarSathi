@@ -65,6 +65,15 @@ def parse_listing_html(
 
         fields = {}
         additional_text = []
+
+        accordion_panel = card.find_parent("div", class_="accordion-collapse")
+        if accordion_panel and accordion_panel.get("id"):
+            button = soup.find("button", attrs={"data-bs-target": f"#{accordion_panel['id']}"})
+            if button:
+                ministry = _clean_text(button)
+                if ministry:
+                    _add_field(fields, "Ministry", ministry)
+
         for span in card.select("span"):
             if title_element in span.parents:
                 continue
