@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ScholarSathi — Find scholarships. Keep your data yours.',
-  description: 'A privacy-first scholarship intelligence and application assistant for students.',
+  title: 'ScholarSathi — Find the right scholarship',
+  description: 'Discover scholarships, understand eligibility, and prepare with confidence while keeping your data yours.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -26,11 +26,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
+  colorScheme: 'light',
+  themeColor: '#173b35',
 }
 
 export default function RootLayout({
