@@ -1,7 +1,0 @@
-beautifulsoup4
-fastapi
-google-genai>=2.32,<3
-psycopg[binary]
-pypdf>=6.21,<7
-python-dotenv
-requests
