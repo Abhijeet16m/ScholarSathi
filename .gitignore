@@ -3,3 +3,4 @@ test/
 __pycache__/
 .env
 requirements.txt
+backend/tests/

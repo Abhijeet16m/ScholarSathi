@@ -1,0 +1,52 @@
+ScholarSathi backend pre-execution audit
+Date: 2026-10-29
+
+Verified findings
+-----------------
+
+AUDIT-01 — Potential important data-quality issue; manual verification required
+Files: backend/utils.py:25-43; backend/main.py:42-56
+Issue: PDF extraction catches failures per document and returns an empty string when all PDFs fail or contain no text. The pipeline then still sends that empty string to Gemini and upserts the result.
+Impact: A scholarship can be stored with extracted eligibility/details based only on the listing even when its referenced rules PDFs could not be read. Whether this produces materially incomplete or inaccurate eligibility fields depends on the NSP listing and Gemini output.
+Recommended fix: Decide whether a listing-only extraction is acceptable. If PDF text is required for eligibility, prevent persistence or explicitly flag incomplete source extraction when no PDF text was obtained.
+
+AUDIT-02 — Database compatibility cannot be confirmed; manual verification required
+File: backend/db.py:166-169
+Issue: The upsert targets `ON CONFLICT (name, provider)`, but no SQL schema, migration, or database definition exists in the repository. Therefore the matching unique constraint/index, column types, nullability, and status defaults cannot be checked locally.
+Impact: If PostgreSQL has no matching unique/exclusion constraint, each upsert fails. A conventional unique index also permits multiple NULL provider values unless configured otherwise, which could bypass conflict handling for those rows.
+Recommended fix: Before executing, inspect the target database schema read-only and verify the constraint and the columns/types used in the INSERT. Test duplicate keys in a disposable database. No database was contacted or changed during this audit.
+
+AUDIT-03 — Pytest is not declared in the dependency file
+Files: requirements.txt:1-8; backend/tests/test_backend.py
+Issue: The test module imports pytest, but pytest is absent from requirements.txt.
+Impact: Installing only the listed dependencies does not provide a declared test-runner dependency, so the requested pytest command is not reproducible from the project dependency file alone.
+Recommended fix: Add pytest to a development/test dependency manifest when the project is next updated.
+
+AUDIT-04 — Backend test directory is ignored by Git
+File: .gitignore:6
+Issue: `backend/tests/` is explicitly ignored although backend/tests/test_backend.py exists.
+Impact: The added test suite is omitted from normal Git status/commits unless explicitly force-added or the ignore rule is changed; a fresh checkout may therefore not contain the tests.
+Recommended fix: Remove or narrow the ignore rule, or explicitly unignore the intended test files.
+
+AUDIT-05 — Standalone LLM example references a missing input file
+Files: backend/llm.py:89-90; expected path: backend/extracted_pdf.txt
+Issue: Running llm.py directly reaches an open() of extracted_pdf.txt, which is absent from the repository.
+Impact: The standalone example exits with FileNotFoundError. This does not affect the main.py pipeline, which does not use this example block.
+Recommended fix: Provide the example input file or remove/update the standalone example when maintaining it.
+
+Checks completed
+----------------
+- Module/file paths: main.py imports Scrapper.py, webScrap/nsp.py, utils.py, llm.py, and db.py from the backend directory; each exists. No circular import was found. Imports in the inspected backend modules are used.
+- Configuration: backend/.env contains non-empty DATABASE_URL and GEMINI_API_KEY entries (values intentionally not read out or displayed). db.py and llm.py each call load_dotenv() and read the matching variable. No process-level overrides were set during the audit. Python dotenv loading itself could not be executed because Python was unavailable.
+- Gemini model identifier: `gemini-3.5-flash-lite` is listed as a stable model in [Google's Gemini model documentation](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite).
+- Execution flow: backend/main.py fetches NSP HTML, passes raw HTML to scrape_nsp_cards, extracts each listing's pdf_links, passes listing and PDF text to extract_scholarship_info, then calls upsert_scholarship. Missing titles and per-item processing exceptions are caught and the loop continues. Initial page-fetch or scraper errors occur outside the per-item handler and stop that portal run.
+- Dependencies: all direct runtime imports have corresponding packages in requirements.txt. pytest is not listed, as noted above.
+- Existing automated tests: backend/tests/test_backend.py exists and was inspected. No live Gemini or database test was run.
+- Requested command `python -m pytest backend/tests/test_backend.py -v`: not executed; PowerShell reports `python` is not recognized. Fallback `py -m pytest backend/tests/test_backend.py -v` also could not start because the only registered Python 3.11 executable is inaccessible (Access is denied). No project .venv/venv was present and no standalone pytest or uv command was found. Result: tests not run; no pass/fail count can be reported.
+- No production pipeline command, network request, OCR conversion, Gemini request, database query, or database write was executed.
+
+Manual execution command (not run)
+---------------------------------
+Working directory: `ScholarSathi/backend`
+Command: `python main.py`
+This is the actual entry point: main.py invokes main() under its `if __name__ == "__main__"` guard. It will run the live NSP → PDF → Gemini → PostgreSQL pipeline and should only be run after resolving the environment/runtime and manually verifying database compatibility.
