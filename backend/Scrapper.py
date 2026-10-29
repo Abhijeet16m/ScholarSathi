@@ -69,3 +69,17 @@ def fetch_html(url):
     response.raise_for_status()
     return response.text
 
+
+def prepare_html_for_ai(url, output_file="cleaned.html"):
+    html = fetch_html(url)
+    cleaned_html = clean_html(html)
+
+    with open(output_file, "w", encoding="utf-8") as file:
+        file.write(cleaned_html)
+
+    print(f"Cleaned HTML saved to {output_file}")
+    print(f"Original size: {len(html):,} characters")
+    print(f"Cleaned size: {len(cleaned_html):,} characters")
+
+    return cleaned_html
+    

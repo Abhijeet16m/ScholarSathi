@@ -1,13 +1,9 @@
+from webScrap.nsp import scrape_nsp_cards
 from Scrapper import fetch_html
-from Scrapper import clean_html, split_repeated_elements
 
+html = fetch_html("https://scholarships.gov.in/All-Scholarships")
+print("HTML length:", len(html))
 
-url = "https://scholarships.gov.in/All-Scholarships"
-html = fetch_html(url)
-cleaned = clean_html(html)
-groups = split_repeated_elements(cleaned)
-
-for pattern, elements in groups.items():
-    print(pattern, len(elements))
-with open("dump.txt", "w") as f:
-    f.write(cleaned)
+data = scrape_nsp_cards(html)
+print("Scholarships found:", len(data))
+print(data[:])
