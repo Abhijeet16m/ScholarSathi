@@ -2,3 +2,4 @@ test/
 .venv/
 __pycache__/
 .env
+requirements.txt
