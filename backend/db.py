@@ -116,7 +116,7 @@ def upsert_scholarship(data):
         )
         ON CONFLICT (name, provider)
         DO UPDATE SET
-            description = EXCLUDED.description,
+            description = COALESCE(EXCLUDED.description, scholarships.description),
             application_url = EXCLUDED.application_url,
             official_pdf_urls = EXCLUDED.official_pdf_urls,
             application_open_date = EXCLUDED.application_open_date,

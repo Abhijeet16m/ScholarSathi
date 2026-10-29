@@ -1,12 +1,8 @@
-
-from pathlib import Path
-
-from Scrapper import prepare_html_for_ai
+from Scrapper import fetch_html
 from webScrap.nsp import scrape_nsp_cards
-from utils import extract_pdf_text_ocr
 from utils import extract_scholarship_pdfs
 from llm import extract_scholarship_info
-from db import add_scholarship
+from db import upsert_scholarship
 
 
 # Each portal has its own scraper module and URL.
@@ -20,17 +16,28 @@ PORTALS = [
 
 
 def process_portal(portal):
+    
     print(f"\nProcessing portal: {portal['name']}")
 
     # Fetch and clean the portal HTML.
-    cleaned_html = prepare_html_for_ai(portal["url"])
+    html = fetch_html(portal["url"])
 
     # Extract scholarship listings using that portal's scraper.
-    scholarships = portal["scraper"](cleaned_html)
+    scholarships = portal["scraper"](html)
+
     print(f"Found {len(scholarships)} scholarships")
 
     for index, scholarship in enumerate(scholarships, start=1):
-        print(f"\n[{index}/{len(scholarships)}] {scholarship['title']}")
+        try:
+            title = scholarship.get("title")
+
+            if not title:
+                raise ValueError("Scholarship title is missing")
+
+            print(f"\n[{index}/{len(scholarships)}] {title}")
+        except Exception as error:
+            print(f"Failed to process scholarship: {error}")
+            continue
 
         try:
             # TODO: Implement this function later.
@@ -45,7 +52,7 @@ def process_portal(portal):
             )
 
             # Insert into PostgreSQL.
-            scholarship_id = add_scholarship(
+            scholarship_id = upsert_scholarship(
                 extracted_data.model_dump()
             )
 
