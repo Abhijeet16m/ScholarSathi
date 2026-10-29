@@ -23,3 +23,4 @@ def scrape_nsp_cards(html):
         })
 
     return scholarships
+

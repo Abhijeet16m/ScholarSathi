@@ -1,9 +1,22 @@
-from webScrap.nsp import scrape_nsp_cards
-from Scrapper import fetch_html
+from db import DATABASE_URL
+from llm import client
+import psycopg2
 
-html = fetch_html("https://scholarships.gov.in/All-Scholarships")
-print("HTML length:", len(html))
+def test_gemini_connection():
+    response = client.models.generate_content(
+        model="gemini-3.5-flash-lite",
+        contents='Reply with exactly: "Gemini is working!"'
+    )
+    print("Gemini response:", response.text)
 
-data = scrape_nsp_cards(html)
-print("Scholarships found:", len(data))
-print(data[:])
+def test_db_connection():
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT version();")
+            print("Database connected!")
+            print(cur.fetchone()[0])
+
+
+if __name__ == "__main__":
+    test_gemini_connection()
+    test_db_connection()

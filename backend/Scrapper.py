@@ -45,9 +45,9 @@ def clean_html(html):
         comment.extract()
 
     # Keep the main content if available
-    main = soup.find("main") or soup.find("article")
-    if main:
-        soup = BeautifulSoup(str(main), "html.parser")
+    # main = soup.find("main") or soup.find("article")
+    # if main:
+    #     soup = BeautifulSoup(str(main), "html.parser")
 
     # Remove unnecessary attributes
     for tag in soup.find_all(True):
