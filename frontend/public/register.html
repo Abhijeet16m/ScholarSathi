@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#153d36">
+  <title>Create account — ScholarSathi</title>
+  <link rel="stylesheet" href="assets/css/auth.css">
+</head>
+<body>
+  <main class="shell"><div class="page">
+    <section class="story" aria-label="About ScholarSathi">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">▤</span><span class="brand-name">Scholar<span>Sathi</span></span></div>
+      <div class="story-copy"><p class="eyebrow">A brighter way to find support</p><h1>Start your scholarship journey.</h1><p>Create your student profile to find scholarships that fit your circumstances and studies.</p></div>
+      <div class="privacy"><span aria-hidden="true">◇</span><span>Your profile details help us compare you with scholarship eligibility criteria.</span></div>
+    </section>
+    <section class="auth" aria-label="Student registration">
+      <div class="form-wrap form-wrap-wide">
+        <a class="text-link back" href="index.html">← Back to log in</a>
+        <p class="auth-kicker">Step 1 of 3 · Student profile</p>
+        <h2>Create your account.</h2>
+        <p class="intro">Add your study and eligibility details. We’ll email a code to verify your address before you set a password.</p>
+        <form action="/api/auth/registration/request-otp" method="post">
+          <div class="profile-grid">
+            <div class="field"><label for="name">Full name</label><input id="name" name="name" type="text" placeholder="Your full name" autocomplete="name" maxlength="120" required></div>
+            <div class="field"><label for="email">Email address</label><input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" maxlength="254" required></div>
+            <div class="field"><label for="date-of-birth">Date of birth</label><input id="date-of-birth" name="date_of_birth" type="date" autocomplete="bday" required></div>
+            <div class="field"><label for="gender">Gender</label><select id="gender" name="gender" required><option value="">Choose one</option><option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option></select></div>
+            <div class="field"><label for="category">Social category</label><select id="category" name="category" required><option value="">Choose one</option><option>General</option><option>EWS</option><option>OBC-NCL</option><option>SEBC</option><option>SC</option><option>ST</option><option>Other</option></select></div>
+            <div class="field"><label for="domicile-state">Domicile state / UT</label><input id="domicile-state" name="domicile_state" type="text" placeholder="e.g. Assam" maxlength="100" required></div>
+            <div class="field"><label for="family-income">Annual family income (₹)</label><input id="family-income" name="annual_family_income" type="number" min="0" max="100000000" step="0.01" placeholder="e.g. 250000" required></div>
+            <div class="field"><label for="qualification-level">Highest qualification completed</label><select id="qualification-level" name="qualification_level" required><option value="">Choose one</option><option>Class 10</option><option>Class 12</option><option>Diploma</option><option>Undergraduate degree</option><option>Postgraduate degree</option><option>Other</option></select></div>
+            <div class="field"><label for="qualification-marks">Marks in that qualification (%) <span class="optional">optional</span></label><input id="qualification-marks" name="qualification_marks" type="number" min="0" max="100" step="0.01" placeholder="e.g. 78.5"></div>
+            <div class="field"><label for="course-level">Current study level</label><select id="course-level" name="course_level" required><option value="">Choose one</option><option>Pre-matric</option><option>Post-matric</option><option>Diploma</option><option>Undergraduate</option><option>Postgraduate</option><option>Research</option><option>Other</option></select></div>
+            <div class="field"><label for="course-name">Current course / class</label><input id="course-name" name="course_name" type="text" placeholder="e.g. B.Tech Computer Science" maxlength="160" required></div>
+            <div class="field"><label for="course-year">Current year / class</label><input id="course-year" name="course_year" type="number" min="1" max="20" placeholder="e.g. 1" required></div>
+            <div class="field"><label for="institution-name">School / college / institution <span class="optional">optional</span></label><input id="institution-name" name="institution_name" type="text" placeholder="Institution name" maxlength="200"></div>
+            <div class="field"><label for="entrance-rank">Entrance exam rank <span class="optional">optional</span></label><input id="entrance-rank" name="entrance_exam_rank" type="number" min="1" max="100000000" placeholder="Leave blank if not applicable"></div>
+            <div class="field"><label for="parent-occupation">Parent / guardian occupation <span class="optional">optional</span></label><input id="parent-occupation" name="parent_occupation" type="text" placeholder="e.g. police personnel, mine worker" maxlength="160"></div>
+            <div class="field"><label for="disability">Student with disability? <span class="optional">optional</span></label><select id="disability" name="has_disability"><option value="">Choose if you wish</option><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div class="field"><label for="orphan">Orphan / eligible under orphan support? <span class="optional">optional</span></label><select id="orphan" name="is_orphan"><option value="">Choose if you wish</option><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div class="field"><label for="other-scholarship">Currently receiving another scholarship? <span class="optional">optional</span></label><select id="other-scholarship" name="receives_other_scholarship"><option value="">Choose if you wish</option><option value="true">Yes</option><option value="false">No</option></select></div>
+          </div>
+          <p class="document-help">You can leave optional answers blank. These details are saved to your student profile and used to identify potentially relevant schemes.</p>
+          <button class="submit" type="submit">Continue and verify email&nbsp; →</button>
+        </form>
+        <p class="switch">Already have an account? <a href="index.html">Log in</a></p>
+      </div>
+    </section>
+  </div></main>
+</body>
+</html>

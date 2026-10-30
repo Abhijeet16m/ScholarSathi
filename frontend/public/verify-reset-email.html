@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#153d36"><title>Verify password reset — ScholarSathi</title><link rel="stylesheet" href="assets/css/auth.css"></head>
+<body><main class="shell"><div class="page">
+  <section class="story" aria-label="About ScholarSathi"><div class="brand"><span class="brand-mark" aria-hidden="true">▤</span><span class="brand-name">Scholar<span>Sathi</span></span></div><div class="story-copy"><p class="eyebrow">Account recovery</p><h1>Confirm it’s you.</h1><p>Use the temporary code sent to your email before choosing a new password.</p></div><div class="privacy"><span aria-hidden="true">◇</span><span>The code expires after ten minutes and can only be used once.</span></div></section>
+  <section class="auth" aria-label="Verify password reset code"><div class="form-wrap"><p class="auth-kicker">Password reset · Step 2 of 3</p><h2>Check your email.</h2><p class="intro">If an account exists for the email you entered, a six-digit code has been sent.</p>
+    <form action="/api/auth/password/verify-otp" method="post"><div class="field"><label for="code">Six-digit code</label><input class="code-input" id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" pattern="[0-9]{6}" maxlength="6" required></div><button class="submit" type="submit">Verify code&nbsp; ✓</button></form>
+    <form action="/api/auth/password/resend-otp" method="post" style="margin-top:12px"><button class="submit" type="submit" style="background:#eaf5f1;color:#087f6e">Resend code</button></form><p class="switch"><a href="forgot-password.html">Use a different email</a></p>
+  </div></section>
+</div></main></body></html>
