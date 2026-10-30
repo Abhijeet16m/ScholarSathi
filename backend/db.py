@@ -141,7 +141,7 @@ def upsert_scholarship(data):
 
     # Preserve an existing status when no status was supplied.
     if not data.get("status"):
-        values["status"] = None
+        values["status"] = "active" 
 
     values["official_pdf_urls"] = (
         Json(values["official_pdf_urls"])

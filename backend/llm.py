@@ -44,6 +44,27 @@ class ScholarshipData(BaseModel):
     benefit_duration_months: int | None = None
 
 
+def _gemini_response_schema():
+    """Return the Pydantic schema without unsupported Gemini API keywords.
+
+    ScholarshipData remains the source of truth for validation after generation.
+    The Developer API does not accept JSON Schema's additionalProperties keyword.
+    """
+    schema = ScholarshipData.model_json_schema()
+
+    def remove_unsupported_properties(value):
+        if isinstance(value, dict):
+            value.pop("additionalProperties", None)
+            for nested_value in value.values():
+                remove_unsupported_properties(nested_value)
+        elif isinstance(value, list):
+            for nested_value in value:
+                remove_unsupported_properties(nested_value)
+
+    remove_unsupported_properties(schema)
+    return schema
+
+
 def extract_scholarship_info(listing_data, pdf_text):
     prompt = f"""
 Extract scholarship information for a scholarship database.
@@ -71,7 +92,7 @@ Rules:
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
-            response_schema=ScholarshipData,
+            response_schema=_gemini_response_schema(),
         ),
     )
 
