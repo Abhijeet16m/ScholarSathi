@@ -1,171 +1,71 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScholarSathi | Dashboard</title>
-  <link rel="stylesheet" href="/assets/css/styles.css">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarSathi | Dashboard</title><link rel="stylesheet" href="assets/css/styles.css">
 </head>
-
 <body>
-  <aside class="sidebar">
-    <a class="brand" href="#"><span class="brand-mark">♧</span><span>Scholar<span
-          class="brand-accent">Sathi</span></span></a>
-    <div class="side-label">STUDENT WORKSPACE</div>
-    <nav class="nav" aria-label="Main navigation">
-      <button class="nav-item active" data-view="workspace"><span class="nav-icon">▦</span>Dashboard</button>
-      <button class="nav-item" data-view="profile"><span class="nav-icon">♙</span>My Profile</button>
-      <button class="nav-item" data-view="applications"><span class="nav-icon">▤</span>My Applications <span
-          class="nav-count">2</span></button>
-      <button class="nav-item" data-view="documents"><span class="nav-icon">♧</span>Documents</button>
-      <button class="nav-item" data-view="alerts"><span class="nav-icon">✓</span>Deadline Alerts</button>
-      <button class="nav-item" data-view="privacy"><span class="nav-icon">♢</span>Privacy Center</button>
-      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
-    </nav>
-    <div class="privacy-note"><span>♙</span>
-      <div><strong>Your data, your choice</strong><small>Profile details stay in this browser demo.</small></div>
+<aside class="sidebar">
+  <a class="brand" href="#"><span class="brand-mark">♧</span><span>Scholar<span class="brand-accent">Sathi</span></span></a>
+  <div class="side-label">STUDENT WORKSPACE</div>
+  <nav class="nav" aria-label="Main navigation">
+    <button class="nav-item active" data-view="workspace"><span class="nav-icon">▦</span>Dashboard</button>
+    <button class="nav-item" data-view="profile"><span class="nav-icon">♙</span>My Profile</button>
+    <button class="nav-item" data-view="applications"><span class="nav-icon">▤</span>My Applications <span class="nav-count">2</span></button>
+    <button class="nav-item" data-view="documents"><span class="nav-icon">♧</span>Documents</button>
+    <button class="nav-item" data-view="alerts"><span class="nav-icon">✓</span>Deadline Alerts</button>
+    <button class="nav-item" data-view="privacy"><span class="nav-icon">♢</span>Privacy Center</button>
+    <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
+  </nav>
+  <div class="privacy-note"><span>♙</span><div><strong>Your data, your choice</strong><small>Profile details stay in this browser demo.</small></div></div>
+</aside>
+<main class="main">
+<header class="topbar">
+  <div><div class="eyebrow">STUDENT WORKSPACE</div><h1 id="page-title">Good morning, Ishan</h1></div>
+  <div class="user-actions"><span class="avatar">I</span><span>Ishan</span><button class="logout" id="logout" title="Logout" aria-label="Logout">⇥</button></div>
+</header>
+
+<!-- Dashboard and Discover are intentionally one page, in this order. -->
+<section class="page-view active" id="view-workspace">
+  <div class="workspace-wrap">
+    <section class="hero">
+      <div class="eyebrow">PERSONALIZED FOR YOU</div>
+      <h2>Your next opportunity may be closer than you think.</h2>
+      <p>Build your local student profile to see explainable scholarship matches.</p>
+      <button class="primary compact" data-go="profile">Complete your profile <span>›</span></button>
+    </section>
+
+    <div class="section-kicker">OVERVIEW</div>
+    <h3 class="section-title">Your scholarship journey</h3>
+    <div class="stats">
+      <article class="stat-card"><strong>3</strong><span>Good matches</span><small>Based on your available profile details</small></article>
+      <article class="stat-card"><strong>67%</strong><span>Document readiness</span><button data-go="documents">Complete checklist <b>›</b></button></article>
     </div>
-  </aside>
-  <main class="main">
-    <header class="topbar">
-      <div>
-        <div class="eyebrow">STUDENT WORKSPACE</div>
-        <h1 id="page-title">Good morning, Ishan</h1>
-      </div>
-      <div class="user-actions"><span class="avatar">I</span><span>Ishan</span><button class="logout" id="logout"
-          title="Logout" aria-label="Logout">⇥</button></div>
-    </header>
 
-    <!-- Dashboard and Discover are intentionally one page, in this order. -->
-    <section class="page-view active" id="view-workspace">
-      <div class="workspace-wrap">
-        <section class="hero">
-          <div class="eyebrow">PERSONALIZED FOR YOU</div>
-          <h2>Your next opportunity may be closer than you think.</h2>
-          <p>Build your local student profile to see explainable scholarship matches.</p>
-          <button class="primary compact" data-go="profile">Complete your profile <span>›</span></button>
-        </section>
+    <section class="scholarship-section" id="scholarship-section">
+      <div class="discover-heading">
+        <div><div class="eyebrow">DISCOVER</div><h2>Opportunities that fit your story.</h2></div>
+        <p>Every result shows which criteria match, fail, or still need verification.</p>
+      </div>
+      <form class="searchbar" id="search-form"><span class="search-icon">⌕</span><input id="search-input" placeholder="Search scholarships or providers" aria-label="Search scholarships or providers"><button class="primary search-button">Search</button></form>
+      <div class="results-meta"><span id="results-count">3 scholarships</span><span>Explainable matches</span></div>
+      <div class="scholarship-grid" id="scholarship-grid"></div>
+    </section>
+  </div>
+</section>
 
-        <div class="section-kicker">OVERVIEW</div>
-        <h3 class="section-title">Your scholarship journey</h3>
-        <div class="stats">
-          <article class="stat-card"><strong>3</strong><span>Good matches</span><small>Based on your available profile
-              details</small></article>
-          <article class="stat-card"><strong>67%</strong><span>Document readiness</span><button
-              data-go="documents">Complete checklist <b>›</b></button></article>
-        </div>
-
-        <section class="scholarship-section" id="scholarship-section">
-          <div class="discover-heading">
-            <div>
-              <div class="eyebrow">DISCOVER</div>
-              <h2>Opportunities that fit your story.</h2>
-            </div>
-            <p>Every result shows which criteria match, fail, or still need verification.</p>
-          </div>
-          <form class="searchbar" id="search-form"><span class="search-icon">⌕</span><input id="search-input"
-              placeholder="Search scholarships or providers" aria-label="Search scholarships or providers"><button
-              class="primary search-button">Search</button></form>
-          <div class="results-meta"><span id="results-count">3 scholarships</span><span>Explainable matches</span></div>
-          <div class="scholarship-grid" id="scholarship-grid"></div>
-        </section>
-      </div>
-    </section>
-
-    <section class="page-view" id="view-profile">
-      <div class="simple-wrap">
-        <div class="eyebrow">YOUR INFORMATION</div>
-        <h2>My Profile</h2>
-        <p class="muted">Keep your student details up to date to improve eligibility explanations.</p>
-        <form id="profile-form" class="panel profile-form">
-          <label>Education level<select name="level">
-              <option>Undergraduate</option>
-              <option>Postgraduate</option>
-              <option>Diploma</option>
-              <option>School</option>
-            </select></label>
-          <label>Course / stream<input name="course" placeholder="e.g. Computer Science"></label><label>Year of
-            study<select name="year">
-              <option>1st Year</option>
-              <option>2nd Year</option>
-              <option>3rd Year</option>
-              <option>4th Year</option>
-            </select></label>
-          <label>College / institution<input name="college" placeholder="Institution name"></label><label>Institution
-            state<input name="state" placeholder="e.g. Karnataka"></label>
-          <label>Annual family income range<select name="income">
-              <option value="">Select range</option>
-              <option>Below ₹2 lakh</option>
-              <option>Below ₹5 lakh</option>
-              <option>₹5–8 lakh</option>
-              <option>Above ₹8 lakh</option>
-            </select></label>
-          <label>Latest marks (%)<input name="marks" type="number" min="0" max="100"
-              placeholder="e.g. 82"></label><button class="primary">Save profile</button><span class="form-status"
-            id="profile-status"></span>
-        </form>
-      </div>
-    </section>
-    <section class="page-view" id="view-applications">
-      <div class="simple-wrap">
-        <div class="eyebrow">YOUR PROGRESS</div>
-        <h2>My Applications</h2>
-        <div class="panel">
-          <p>You have <strong>2 applications in progress</strong> in this demo.</p>
-          <p class="muted">Your tracked scholarship applications appear here.</p>
-        </div>
-      </div>
-    </section>
-    <section class="page-view" id="view-documents">
-      <div class="simple-wrap">
-        <div class="eyebrow">PREPARE</div>
-        <h2>Documents</h2>
-        <div class="panel checklist"><label><input type="checkbox" checked> Latest marksheet</label><label><input
-              type="checkbox" checked> Institution certificate</label><label><input type="checkbox"> Income
-            certificate</label><label><input type="checkbox"> Domicile certificate</label><label><input type="checkbox"
-              checked> Category certificate (if applicable)</label></div>
-      </div>
-    </section>
-    <section class="page-view" id="view-alerts">
-      <div class="simple-wrap">
-        <div class="eyebrow">STAY ON TRACK</div>
-        <h2>Deadline Alerts</h2>
-        <div class="panel"><strong>Udaan Undergraduate Access Award</strong>
-          <p class="muted">Application deadline: 18 Nov 2026</p><strong>Karnataka STEM Continuation Grant</strong>
-          <p class="muted">Application deadline: 2 Dec 2026</p>
-        </div>
-      </div>
-    </section>
-    <section class="page-view" id="view-privacy">
-      <div class="simple-wrap">
-        <div class="eyebrow">YOUR DATA, YOUR CHOICE</div>
-        <h2>Privacy Center</h2>
-        <div class="panel">
-          <p>Profile details in this prototype are saved in this browser using localStorage.</p>
-          <p class="muted">Browser storage is not encrypted by default. This demo does not send profile information to a
-            server.</p><button class="secondary" id="clear-data">Clear local demo data</button>
-        </div>
-      </div>
-    </section>
-    <section class="page-view" id="view-settings">
-      <div class="simple-wrap">
-        <div class="eyebrow">PREFERENCES</div>
-        <h2>Settings</h2>
-        <div class="panel"><label class="toggle-row"><span>Email deadline reminders</span><input type="checkbox"
-              checked></label><label class="toggle-row"><span>Show saved scholarship updates</span><input
-              type="checkbox" checked></label>
-          <p class="muted">Notification delivery requires a backend service and your permission.</p>
-        </div>
-      </div>
-    </section>
-  </main>
-  <dialog id="eligibility-dialog"><button class="dialog-close" id="dialog-close" aria-label="Close">×</button>
-    <div class="eyebrow">EXPLAINABLE ELIGIBILITY</div>
-    <h2 id="dialog-title"></h2>
-    <div id="dialog-body"></div>
-  </dialog>
-  <script src="/assets/js/dashboard.js"></script>
-</body>
-
-</html>
+<section class="page-view" id="view-profile"><div class="simple-wrap"><div class="eyebrow">YOUR INFORMATION</div><h2>My Profile</h2><p class="muted">Keep your student details up to date to improve eligibility explanations.</p><form id="profile-form" class="panel profile-form">
+<label>Education level<select name="level"><option>Undergraduate</option><option>Postgraduate</option><option>Diploma</option><option>School</option></select></label>
+<label>Course / stream<input name="course" placeholder="e.g. Computer Science"></label><label>Year of study<select name="year"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select></label>
+<label>College / institution<input name="college" placeholder="Institution name"></label><label>Institution state<input name="state" placeholder="e.g. Karnataka"></label>
+<label>Annual family income range<select name="income"><option value="">Select range</option><option>Below ₹2 lakh</option><option>Below ₹5 lakh</option><option>₹5–8 lakh</option><option>Above ₹8 lakh</option></select></label>
+<label>Latest marks (%)<input name="marks" type="number" min="0" max="100" placeholder="e.g. 82"></label><button class="primary">Save profile</button><span class="form-status" id="profile-status"></span></form></div></section>
+<section class="page-view" id="view-applications"><div class="simple-wrap"><div class="eyebrow">YOUR PROGRESS</div><h2>My Applications</h2><div class="panel"><p>You have <strong>2 applications in progress</strong> in this demo.</p><p class="muted">Your tracked scholarship applications appear here.</p></div></div></section>
+<section class="page-view" id="view-documents"><div class="simple-wrap"><div class="eyebrow">PREPARE</div><h2>Documents</h2><div class="panel checklist"><label><input type="checkbox" checked> Latest marksheet</label><label><input type="checkbox" checked> Institution certificate</label><label><input type="checkbox"> Income certificate</label><label><input type="checkbox"> Domicile certificate</label><label><input type="checkbox" checked> Category certificate (if applicable)</label></div></div></section>
+<section class="page-view" id="view-alerts"><div class="simple-wrap"><div class="eyebrow">STAY ON TRACK</div><h2>Deadline Alerts</h2><div class="panel"><strong>Udaan Undergraduate Access Award</strong><p class="muted">Application deadline: 18 Nov 2026</p><strong>Karnataka STEM Continuation Grant</strong><p class="muted">Application deadline: 2 Dec 2026</p></div></div></section>
+<section class="page-view" id="view-privacy"><div class="simple-wrap"><div class="eyebrow">YOUR DATA, YOUR CHOICE</div><h2>Privacy Center</h2><div class="panel"><p>Profile details in this prototype are saved in this browser using localStorage.</p><p class="muted">Browser storage is not encrypted by default. This demo does not send profile information to a server.</p><button class="secondary" id="clear-data">Clear local demo data</button></div></div></section>
+<section class="page-view" id="view-settings"><div class="simple-wrap"><div class="eyebrow">PREFERENCES</div><h2>Settings</h2><div class="panel"><label class="toggle-row"><span>Email deadline reminders</span><input type="checkbox" checked></label><label class="toggle-row"><span>Show saved scholarship updates</span><input type="checkbox" checked></label><p class="muted">Notification delivery requires a backend service and your permission.</p></div></div></section>
+</main>
+<dialog id="eligibility-dialog"><button class="dialog-close" id="dialog-close" aria-label="Close">×</button><div class="eyebrow">EXPLAINABLE ELIGIBILITY</div><h2 id="dialog-title"></h2><div id="dialog-body"></div></dialog>
+<script src="assets/js/Dashboard.js"></script>
+</body></html>
