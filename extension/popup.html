@@ -3,19 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <style>
-      body { font-family: Arial, sans-serif; width: 300px; padding: 12px; }
-      h3 { margin: 0 0 8px; }
+      body { font-family: Arial, sans-serif; width: 340px; padding: 12px; max-height: 520px; overflow-y: auto; }
+      h3 { margin: 0 0 4px; }
+      #who { font-size: 12px; color: #555; margin-bottom: 8px; }
       button { width: 100%; padding: 10px; font-size: 15px; cursor: pointer; }
-      #docsBtn { margin-top: 8px; font-size: 13px; padding: 6px; }
-      #status { margin-top: 10px; font-size: 13px; color: #333; line-height: 1.5; }
-      .ok { color: #2e7d32; } .warn { color: #b26a00; } .bad { color: #c62828; }
+      #manageBtn { margin-top: 8px; font-size: 13px; padding: 6px; }
+      .opt { font-size: 12px; margin: 8px 0 0; color: #333; }
+      #status { margin-top: 10px; font-size: 13px; line-height: 1.5; }
+      #status div { margin-bottom: 2px; }
+      .head { font-weight: bold; }
+      .ok { color: #2e7d32; } .warn { color: #b26a00; } .bad { color: #c62828; } .info { color: #555; }
     </style>
   </head>
   <body>
     <h3>Scholar Assist</h3>
-    <button id="fillBtn">Fill form and attach files</button>
-    <button id="docsBtn">Manage my documents</button>
+    <div id="who"></div>
+    <button id="fillBtn">Fill this page</button>
+    <label class="opt"><input type="checkbox" id="overwrite" /> Replace values already typed in the form</label>
+    <button id="manageBtn">Edit my profile and documents</button>
     <div id="status"></div>
+    <script src="config.js"></script>
     <script src="vault.js"></script>
     <script src="lib/pdf-lib.min.js"></script>
     <script type="module" src="popup.js"></script>
