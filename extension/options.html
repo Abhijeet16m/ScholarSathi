@@ -1,40 +1,43 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>My Documents</title>
-    <style>
-      body { font-family: Arial, sans-serif; max-width: 560px; margin: 30px auto; }
-      .doc { border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-      .doc h4 { margin: 0 0 6px; }
-      .saved { font-size: 13px; color: #2e7d32; margin-top: 6px; }
-      .none { font-size: 13px; color: #888; margin-top: 6px; }
-      button { margin-left: 8px; }
-    </style>
-  </head>
-  <body>
-    <h2>My Documents</h2>
-    <p>Save each document once. Files stay in this browser only.</p>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScholarSathi Assistant settings</title>
+  <style>
+    :root { color-scheme: light; font: 15px/1.5 system-ui, sans-serif; color: #18322d; background: #f4f7f6; }
+    body { max-width: 850px; margin: 32px auto; padding: 0 20px 48px; }
+    h1 { margin-bottom: 4px; } h2 { margin-top: 32px; }
+    .notice { padding: 12px 14px; border: 1px solid #e4c98a; border-radius: 10px; background: #fff8e7; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    label { display: grid; gap: 5px; font-weight: 600; }
+    input { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid #b9c9c4; border-radius: 8px; background: white; }
+    button { padding: 9px 13px; border: 0; border-radius: 8px; background: #078b74; color: white; font-weight: 700; cursor: pointer; }
+    .doc { margin: 12px 0; padding: 14px; border: 1px solid #d5e1dd; border-radius: 10px; background: white; }
+    .doc h3 { margin: 0 0 10px; } .status { margin: 8px 0 0; color: #566c66; }
+    .status.saved { color: #08765f; } .status.error { color: #b42318; }
+    .doc button { margin-left: 8px; background: #eaf5f1; color: #08765f; }
+    #profile-status, #doc-status { min-height: 1.5em; }
+    @media (max-width: 520px) { body { margin-top: 18px; } }
+  </style>
+</head>
+<body>
+  <h1>ScholarSathi Assistant</h1>
+  <p>Profile values and selected files are stored in this Chrome profile's extension storage.</p>
+  <p class="notice"><strong>Development build:</strong> documents are not encrypted at rest yet. Use sample documents only; this package is not ready for Chrome Web Store release.</p>
 
-    <div class="doc" data-type="photo">
-      <h4>Passport photo</h4>
-      <input type="file" accept="image/*" />
-      <div class="status"></div>
-    </div>
+  <h2>Autofill profile</h2>
+  <p>The ScholarSathi dashboard can sync your registered profile here. You can also edit these local values.</p>
+  <form id="profile-form"><div class="grid" id="profile-fields"></div><p><button type="submit">Save profile in Chrome</button></p></form>
+  <p id="profile-status" role="status" aria-live="polite"></p>
 
-    <div class="doc" data-type="signature">
-      <h4>Signature</h4>
-      <input type="file" accept="image/*" />
-      <div class="status"></div>
-    </div>
+  <h2>My documents</h2>
+  <p>Files never go to ScholarSathi's backend from this extension. Maximum 10 MB per file; PDF, JPG, or PNG.</p>
+  <div id="documents"></div>
+  <p id="doc-status" role="status" aria-live="polite"></p>
 
-    <div class="doc" data-type="incomeCert">
-      <h4>Income certificate (PDF)</h4>
-      <input type="file" accept="application/pdf" />
-      <div class="status"></div>
-    </div>
-
-    <script src="vault.js"></script>
-    <script src="options.js"></script>
-  </body>
+  <script src="config.js"></script>
+  <script src="vault.js"></script>
+  <script src="options.js"></script>
+</body>
 </html>

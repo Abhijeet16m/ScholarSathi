@@ -3,19 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <style>
-      body { font-family: Arial, sans-serif; width: 300px; padding: 12px; }
+      body { font-family: Arial, sans-serif; width: 320px; padding: 12px; color: #18322d; }
       h3 { margin: 0 0 8px; }
       button { width: 100%; padding: 10px; font-size: 15px; cursor: pointer; }
       #docsBtn { margin-top: 8px; font-size: 13px; padding: 6px; }
       #status { margin-top: 10px; font-size: 13px; color: #333; line-height: 1.5; }
       .ok { color: #2e7d32; } .warn { color: #b26a00; } .bad { color: #c62828; }
+      .privacy { margin-top: 12px; padding: 9px; border-radius: 8px; background: #fff6df; font-size: 12px; }
+      label { display: block; margin-top: 10px; font-size: 12px; }
     </style>
   </head>
   <body>
     <h3>Scholar Assist</h3>
+    <div id="profile-name">Loading profile…</div>
     <button id="fillBtn">Fill form and attach files</button>
     <button id="docsBtn">Manage my documents</button>
+    <label><input id="overwrite" type="checkbox" /> Replace values already typed in the form</label>
     <div id="status"></div>
+    <p class="privacy">Use only on scholarship sites you trust. Review every field and file, then submit the form yourself. Documents are currently stored unencrypted.</p>
+    <script src="config.js"></script>
     <script src="vault.js"></script>
     <script src="lib/pdf-lib.min.js"></script>
     <script type="module" src="popup.js"></script>

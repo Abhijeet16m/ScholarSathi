@@ -1,12 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Scholar Assist (Step 2b: PDF shrink)",
-  "version": "0.0.3",
-  "description": "Fills a practice form and attaches your saved documents, resized to fit.",
-  "permissions": ["activeTab", "scripting"],
+  "name": "ScholarSathi Student Assistant",
+  "version": "1.0.0",
+  "description": "Stores a student's chosen documents in this Chrome profile and helps fill scholarship forms. The student reviews and submits each form.",
+  "permissions": ["activeTab", "scripting", "storage", "unlimitedStorage"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": [
+      "http://localhost/*",
+      "http://127.0.0.1/*",
+      "https://scholar-sathi-seven.vercel.app/*"
+    ],
+    "js": ["bridge.js"],
+    "run_at": "document_start"
+  }],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Scholar Assist"
+    "default_title": "ScholarSathi Assistant"
   },
   "options_page": "options.html"
 }

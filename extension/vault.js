@@ -1,6 +1,5 @@
-// A tiny "vault": saves your documents inside the browser (IndexedDB).
-// Both the options page and the popup load this file.
-// NOTE: files are stored plainly for now. We add encryption in a later step.
+// Documents are stored in this Chrome profile's extension IndexedDB.
+// This prototype does not encrypt files at rest; do not store real documents yet.
 
 const DB_NAME = "scholarsathi";
 const STORE = "docs";
@@ -41,4 +40,19 @@ async function deleteDoc(type) {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+}
+
+async function getProfile() {
+  const result = await chrome.storage.local.get("profile");
+  return result.profile || {};
+}
+
+async function saveProfile(profile) {
+  const allowed = new Set(PROFILE_FIELDS.map(field => field.key));
+  const clean = {};
+  for (const [key, value] of Object.entries(profile || {})) {
+    if (allowed.has(key) && typeof value === "string" && value.trim()) clean[key] = value.trim().slice(0, 240);
+  }
+  await chrome.storage.local.set({ profile: clean });
+  return clean;
 }
