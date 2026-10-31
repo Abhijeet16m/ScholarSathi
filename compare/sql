@@ -1,0 +1,789 @@
+
+-- SCHOLARSATHI: GENERALIZED SCHOLARSHIP MATCHING
+-- READ ONLY
+-- Test student: ID 4
+-- Scholarship-side NULL = Not Applicable
+-- Ambiguous eligibility = Unknown
+
+WITH student_data AS (
+    SELECT
+        st.*,
+
+        EXTRACT(
+            YEAR FROM AGE(CURRENT_DATE, st.date_of_birth)
+        )::integer AS student_age,
+
+        LOWER(TRIM(COALESCE(st.course_name, '')))
+            AS course_text,
+
+        LOWER(TRIM(COALESCE(st.course_level, '')))
+            AS level_text,
+
+        LOWER(TRIM(COALESCE(st.qualification_level, '')))
+            AS qualification_text,
+
+        LOWER(TRIM(COALESCE(st.category, '')))
+            AS category_text
+
+    FROM students st
+    WHERE st.id = 4
+),
+
+student_normalized AS (
+    SELECT
+        sd.*,
+
+        -- Recognize common degree families
+        CASE
+            WHEN course_text ~
+                 '(^|[^a-z])(b[.]?[ ]?tech|bachelor of technology)([^a-z]|$)'
+                THEN 'BTECH'
+
+            WHEN course_text ~
+                 '(^|[^a-z])b[.]?[ ]?e[.]?([^a-z]|$)'
+                THEN 'BE'
+
+            WHEN course_text ~
+                 '(^|[^a-z])bca([^a-z]|$)'
+                THEN 'BCA'
+
+            WHEN course_text ~
+                 '(^|[^a-z])bba([^a-z]|$)'
+                THEN 'BBA'
+
+            WHEN course_text ~
+                 '(^|[^a-z])b[.]?[ ]?sc([^a-z]|$)'
+                THEN 'BSC'
+
+            WHEN course_text ~
+                 '(^|[^a-z])mbbs([^a-z]|$)'
+                THEN 'MBBS'
+
+            WHEN course_text ~
+                 '(^|[^a-z])m[.]?[ ]?tech([^a-z]|$)'
+                THEN 'MTECH'
+
+            WHEN course_text ~
+                 '(^|[^a-z])mca([^a-z]|$)'
+                THEN 'MCA'
+
+            WHEN course_text ~
+                 '(^|[^a-z])mba([^a-z]|$)'
+                THEN 'MBA'
+
+            WHEN course_text ~
+                 '(^|[^a-z])diploma([^a-z]|$)'
+                THEN 'DIPLOMA'
+
+            ELSE NULL
+        END AS course_code,
+
+        -- Normalize course level
+        CASE
+            WHEN level_text IN (
+                'undergraduate',
+                'under graduate',
+                'ug'
+            )
+                THEN 'UG'
+
+            WHEN level_text IN (
+                'postgraduate',
+                'post graduate',
+                'post graduation',
+                'pg'
+            )
+                THEN 'PG'
+
+            WHEN level_text = 'diploma'
+                THEN 'DIPLOMA'
+
+            WHEN level_text = 'degree'
+                THEN 'DEGREE'
+
+            WHEN level_text IN (
+                'school',
+                'pre matric',
+                'post matric',
+                'class ix'
+            )
+                THEN UPPER(level_text)
+
+            ELSE NULL
+        END AS level_code,
+
+        -- Completed qualification, not current course
+        CASE
+            WHEN qualification_text IN (
+                '10th', 'class 10', 'class x',
+                '10th std', 'secondary'
+            )
+                THEN 10
+
+            WHEN qualification_text IN (
+                '12th', 'class 12', 'class xii',
+                '12th std', 'higher secondary',
+                '10+2'
+            )
+                THEN 12
+
+            WHEN qualification_text IN (
+                'bachelor''s degree',
+                'bachelors degree',
+                'undergraduate degree',
+                'graduate',
+                'graduation'
+            )
+                THEN 16
+
+            WHEN qualification_text IN (
+                'postgraduate',
+                'post graduate',
+                'master''s degree',
+                'masters degree'
+            )
+                THEN 18
+
+            ELSE NULL
+        END AS qualification_code,
+
+        CASE
+            WHEN category_text IN ('gen', 'general')
+                THEN 'general'
+            ELSE category_text
+        END AS normalized_category
+
+    FROM student_data sd
+),
+
+checks AS (
+    SELECT
+        sc.id AS scholarship_id,
+        sc.name AS scholarship_name,
+        sc.status AS scholarship_status,
+        sd.id AS student_id,
+        v.condition_name,
+        v.condition_result
+
+    FROM student_normalized sd
+    CROSS JOIN scholarships sc
+
+    CROSS JOIN LATERAL (
+        VALUES
+
+        -- 1. Income
+        (
+            'Income',
+            CASE
+                WHEN sc.max_family_income IS NULL
+                    THEN 'Not Applicable'
+                WHEN sd.annual_family_income IS NULL
+                    THEN 'Unknown'
+                WHEN sd.annual_family_income <=
+                     sc.max_family_income
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 2. Marks
+        (
+            'Marks',
+            CASE
+                WHEN sc.min_qualification_marks IS NULL
+                    THEN 'Not Applicable'
+                WHEN sd.qualification_marks IS NULL
+                    THEN 'Unknown'
+                WHEN sd.qualification_marks >=
+                     sc.min_qualification_marks
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 3. Gender
+        (
+            'Gender',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_genders), 0
+                ) = 0
+                    THEN 'Not Applicable'
+                WHEN NULLIF(TRIM(sd.gender), '') IS NULL
+                    THEN 'Unknown'
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_genders) AS g(value)
+                    WHERE LOWER(TRIM(g.value)) =
+                          LOWER(TRIM(sd.gender))
+                )
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 4. Category
+        (
+            'Category',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_categories), 0
+                ) = 0
+                    THEN 'Not Applicable'
+                WHEN sd.category_text = ''
+                    THEN 'Unknown'
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_categories) AS c(value)
+                    WHERE
+                        CASE
+                            WHEN LOWER(TRIM(c.value))
+                                 IN ('gen', 'general')
+                                THEN 'general'
+                            ELSE LOWER(TRIM(c.value))
+                        END = sd.normalized_category
+                )
+                    THEN 'Match'
+
+                -- These are special eligibility groups,
+                -- not ordinary caste categories.
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_categories) AS c(value)
+                    WHERE LOWER(TRIM(c.value)) IN (
+                        'physically challenged',
+                        'pm cares children scheme beneficiaries',
+                        'under privileged states'
+                    )
+                )
+                    THEN 'Unknown'
+
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 5. Domicile
+        (
+            'Domicile',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_domiciles), 0
+                ) = 0
+                    THEN 'Not Applicable'
+                WHEN NULLIF(TRIM(sd.domicile_state), '') IS NULL
+                    THEN 'Unknown'
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_domiciles) AS d(value)
+                    WHERE LOWER(TRIM(d.value)) =
+                          LOWER(TRIM(sd.domicile_state))
+                )
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 6. Age
+        (
+            'Age',
+            CASE
+                WHEN sc.min_age IS NULL
+                 AND sc.max_age IS NULL
+                    THEN 'Not Applicable'
+                WHEN sd.student_age IS NULL
+                    THEN 'Unknown'
+                WHEN
+                    (sc.min_age IS NULL
+                     OR sd.student_age >= sc.min_age)
+                    AND
+                    (sc.max_age IS NULL
+                     OR sd.student_age <= sc.max_age)
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 7. Completed Qualification
+        (
+            'Qualification Level',
+            CASE
+                WHEN NULLIF(
+                    TRIM(sc.min_qualification_level), ''
+                ) IS NULL
+                    THEN 'Not Applicable'
+
+                WHEN sd.qualification_text = ''
+                    THEN 'Unknown'
+
+                -- Same exact qualification
+                WHEN LOWER(TRIM(sc.min_qualification_level)) =
+                     sd.qualification_text
+                    THEN 'Match'
+
+                -- Class 10 minimum
+                WHEN LOWER(TRIM(sc.min_qualification_level))
+                     IN ('10th', 'class 10', 'class x')
+                     AND sd.qualification_code IS NOT NULL
+                    THEN CASE
+                        WHEN sd.qualification_code >= 10
+                            THEN 'Match'
+                        ELSE 'Not Match'
+                    END
+
+                -- Class 12 minimum
+                WHEN LOWER(TRIM(sc.min_qualification_level))
+                     IN ('12th', 'class 12', 'class xii')
+                     AND sd.qualification_code IS NOT NULL
+                    THEN CASE
+                        WHEN sd.qualification_code >= 12
+                            THEN 'Match'
+                        ELSE 'Not Match'
+                    END
+
+                -- Graduation minimum
+                WHEN LOWER(TRIM(sc.min_qualification_level))
+                     IN (
+                         'bachelor''s degree',
+                         'undergraduate degree'
+                     )
+                     AND sd.qualification_code IS NOT NULL
+                    THEN CASE
+                        WHEN sd.qualification_code >= 16
+                            THEN 'Match'
+                        ELSE 'Not Match'
+                    END
+
+                -- Multiple alternatives or unclear wording:
+                -- do not guess equivalence
+                ELSE 'Unknown'
+            END
+        ),
+
+        -- 8. Course Level
+        (
+            'Course Level',
+            CASE
+                WHEN NULLIF(
+                    TRIM(sc.required_course_level), ''
+                ) IS NULL
+                    THEN 'Not Applicable'
+
+                WHEN sd.level_text = ''
+                    THEN 'Unknown'
+
+                WHEN LOWER(TRIM(sc.required_course_level)) =
+                     sd.level_text
+                    THEN 'Match'
+
+                -- Undergraduate synonyms
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     IN ('undergraduate', 'under graduate')
+                     AND sd.level_code = 'UG'
+                    THEN 'Match'
+
+                -- Postgraduate synonyms
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     IN ('postgraduate', 'post graduate')
+                     AND sd.level_code = 'PG'
+                    THEN 'Match'
+
+                -- Degree / Diploma accepts degree or diploma
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     = 'degree/diploma'
+                     AND (
+                         sd.course_code IN (
+                             'BTECH', 'BE', 'BCA', 'BBA',
+                             'BSC', 'MBBS', 'MTECH',
+                             'MCA', 'MBA', 'DIPLOMA'
+                         )
+                         OR sd.level_code IN (
+                             'DEGREE', 'DIPLOMA'
+                         )
+                     )
+                    THEN 'Match'
+
+                -- Degree
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     = 'degree'
+                     AND sd.course_code IN (
+                         'BTECH', 'BE', 'BCA', 'BBA',
+                         'BSC', 'MBBS', 'MTECH',
+                         'MCA', 'MBA'
+                     )
+                    THEN 'Match'
+
+                -- Diploma only
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     = 'diploma'
+                     AND sd.course_code = 'DIPLOMA'
+                    THEN 'Match'
+
+                -- Diploma is not a B.Tech degree
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     = 'diploma'
+                     AND sd.course_code IN (
+                         'BTECH', 'BE', 'BCA', 'BBA',
+                         'BSC', 'MBBS', 'MTECH',
+                         'MCA', 'MBA'
+                     )
+                    THEN 'Not Match'
+
+                -- Broader level categories need more rules
+                WHEN LOWER(TRIM(sc.required_course_level))
+                     IN (
+                         'professional degree courses',
+                         'graduate / postgraduate',
+                         'post matric',
+                         'pre matric',
+                         'school'
+                     )
+                    THEN 'Unknown'
+
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 9. Eligible Course
+        (
+            'Course',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_courses), 0
+                ) = 0
+                    THEN 'Not Applicable'
+
+                WHEN sd.course_text = ''
+                    THEN 'Unknown'
+
+                -- Exact course name
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_courses) AS c(value)
+                    WHERE LOWER(TRIM(c.value)) =
+                          sd.course_text
+                )
+                    THEN 'Match'
+
+                -- Common verified course aliases
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_courses) AS c(value)
+                    WHERE
+                        (
+                            sd.course_code = 'BTECH'
+                            AND LOWER(TRIM(c.value)) IN (
+                                'b.tech', 'btech',
+                                'b.tec',
+                                'bachelor of technology'
+                            )
+                        )
+                        OR (
+                            sd.course_code = 'BE'
+                            AND LOWER(TRIM(c.value)) IN (
+                                'be', 'b.e', 'b.e.'
+                            )
+                        )
+                        OR (
+                            sd.course_code = 'BCA'
+                            AND LOWER(TRIM(c.value)) IN (
+                                'bca',
+                                'bachelor of computer applications'
+                            )
+                        )
+                        OR (
+                            sd.course_code = 'BBA'
+                            AND LOWER(TRIM(c.value)) IN (
+                                'bba',
+                                'bachelor of business administration'
+                            )
+                        )
+                        OR (
+                            sd.course_code = 'MBBS'
+                            AND LOWER(TRIM(c.value)) = 'mbbs'
+                        )
+                )
+                    THEN 'Match'
+
+                -- Verified broad technical degree group
+                WHEN sd.course_code IN ('BTECH', 'BE')
+                     AND EXISTS (
+                         SELECT 1
+                         FROM UNNEST(sc.eligible_courses) AS c(value)
+                         WHERE LOWER(TRIM(c.value)) IN (
+                             'technical degree',
+                             'engineering',
+                             'engineering & technology'
+                         )
+                     )
+                    THEN 'Match'
+
+                -- Technical diploma category
+                WHEN sd.course_code = 'DIPLOMA'
+                     AND EXISTS (
+                         SELECT 1
+                         FROM UNNEST(sc.eligible_courses) AS c(value)
+                         WHERE LOWER(TRIM(c.value)) IN (
+                             'technical diploma',
+                             'diploma'
+                         )
+                     )
+                    THEN 'Match'
+
+                -- Explicit degree/diploma conflict
+                WHEN sd.course_code IN ('BTECH', 'BE')
+                     AND EXISTS (
+                         SELECT 1
+                         FROM UNNEST(sc.eligible_courses) AS c(value)
+                         WHERE LOWER(TRIM(c.value)) =
+                               'technical diploma'
+                     )
+                     AND NOT EXISTS (
+                         SELECT 1
+                         FROM UNNEST(sc.eligible_courses) AS c(value)
+                         WHERE LOWER(TRIM(c.value)) IN (
+                             'technical degree',
+                             'engineering',
+                             'engineering & technology'
+                         )
+                     )
+                    THEN 'Not Match'
+
+                -- Broad or unrecognized course groups:
+                -- don't assume a mismatch
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_courses) AS c(value)
+                    WHERE LOWER(TRIM(c.value)) IN (
+                        'science',
+                        'medical',
+                        'technology',
+                        'technical',
+                        'allied sciences',
+                        'arts',
+                        'management',
+                        'agriculture',
+                        'humanities',
+                        'professional courses'
+                    )
+                )
+                    THEN 'Unknown'
+
+                -- For unknown course aliases, verify manually
+                WHEN sd.course_code IS NULL
+                    THEN 'Unknown'
+
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 10. Course Year
+        (
+            'Course Year',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_course_years), 0
+                ) = 0
+                    THEN 'Not Applicable'
+                WHEN sd.course_year IS NULL
+                    THEN 'Unknown'
+                WHEN sd.course_year =
+                     ANY(sc.eligible_course_years)
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 11. Entrance Rank
+        (
+            'Entrance Rank',
+            CASE
+                WHEN sc.min_entrance_rank IS NULL
+                    THEN 'Not Applicable'
+                -- Threshold meaning not yet confirmed
+                ELSE 'Unknown'
+            END
+        ),
+
+        -- 12. Institution
+        (
+            'Institution',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_institutions), 0
+                ) = 0
+                    THEN 'Not Applicable'
+                WHEN NULLIF(TRIM(sd.institution_name), '') IS NULL
+                    THEN 'Unknown'
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_institutions) AS i(value)
+                    WHERE LOWER(TRIM(i.value)) =
+                          LOWER(TRIM(sd.institution_name))
+                )
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 13. Disability
+        (
+            'Disability',
+            CASE
+                WHEN sc.requires_disability IS NULL
+                  OR sc.requires_disability = FALSE
+                    THEN 'Not Applicable'
+                WHEN sd.has_disability IS NULL
+                    THEN 'Unknown'
+                WHEN sd.has_disability = TRUE
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 14. Orphan Status
+        (
+            'Orphan Status',
+            CASE
+                WHEN sc.requires_orphan_status IS NULL
+                  OR sc.requires_orphan_status = FALSE
+                    THEN 'Not Applicable'
+                WHEN sd.is_orphan IS NULL
+                    THEN 'Unknown'
+                WHEN sd.is_orphan = TRUE
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 15. Parent Occupation
+        (
+            'Parent Occupation',
+            CASE
+                WHEN COALESCE(
+                    CARDINALITY(sc.eligible_parent_occupations), 0
+                ) = 0
+                    THEN 'Not Applicable'
+                WHEN NULLIF(TRIM(sd.parent_occupation), '') IS NULL
+                    THEN 'Unknown'
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM UNNEST(sc.eligible_parent_occupations) AS p(value)
+                    WHERE LOWER(TRIM(p.value)) =
+                          LOWER(TRIM(sd.parent_occupation))
+                )
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        ),
+
+        -- 16. Other Scholarship
+        (
+            'Other Scholarship',
+            CASE
+                WHEN sc.allows_other_scholarships IS NULL
+                  OR sc.allows_other_scholarships = TRUE
+                    THEN 'Not Applicable'
+                WHEN sd.receives_other_scholarship IS NULL
+                    THEN 'Unknown'
+                WHEN sd.receives_other_scholarship = FALSE
+                    THEN 'Match'
+                ELSE 'Not Match'
+            END
+        )
+
+    ) AS v(condition_name, condition_result)
+),
+
+summary AS (
+    SELECT
+        scholarship_id,
+        scholarship_name,
+        scholarship_status,
+        student_id,
+
+        COUNT(*) FILTER (
+            WHERE condition_result = 'Match'
+        ) AS matched_conditions,
+
+        COUNT(*) FILTER (
+            WHERE condition_result = 'Not Match'
+        ) AS failed_conditions,
+
+        COUNT(*) FILTER (
+            WHERE condition_result = 'Unknown'
+        ) AS unknown_conditions,
+
+        COUNT(*) FILTER (
+            WHERE condition_result = 'Not Applicable'
+        ) AS ignored_conditions,
+
+        COUNT(*) FILTER (
+            WHERE condition_result <> 'Not Applicable'
+        ) AS applicable_conditions,
+
+        ARRAY_AGG(condition_name ORDER BY condition_name)
+            FILTER (
+                WHERE condition_result = 'Not Match'
+            ) AS failed_reasons,
+
+        ARRAY_AGG(condition_name ORDER BY condition_name)
+            FILTER (
+                WHERE condition_result = 'Unknown'
+            ) AS verification_reasons
+
+    FROM checks
+
+    GROUP BY
+        scholarship_id,
+        scholarship_name,
+        scholarship_status,
+        student_id
+)
+
+SELECT
+    scholarship_id,
+    scholarship_name,
+    scholarship_status,
+    student_id,
+
+    matched_conditions,
+    failed_conditions,
+    unknown_conditions,
+    ignored_conditions,
+    applicable_conditions,
+
+    CASE
+        WHEN failed_conditions > 0
+            THEN 'Not Eligible'
+
+        WHEN unknown_conditions > 0
+            THEN 'Needs Verification'
+
+        WHEN matched_conditions > 0
+            THEN 'Eligible'
+
+        ELSE 'Needs Verification'
+    END AS eligibility_status,
+
+    COALESCE(failed_reasons, ARRAY[]::text[])
+        AS failed_reasons,
+
+    COALESCE(verification_reasons, ARRAY[]::text[])
+        AS verification_reasons
+
+FROM summary
+
+ORDER BY
+    CASE
+        WHEN failed_conditions = 0
+         AND unknown_conditions = 0
+         AND matched_conditions > 0
+            THEN 1
+
+        WHEN failed_conditions = 0
+            THEN 2
+
+        ELSE 3
+    END,
+    matched_conditions DESC,
+    scholarship_id;
