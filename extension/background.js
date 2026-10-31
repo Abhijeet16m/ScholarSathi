@@ -95,8 +95,7 @@ async function saveLocalProfile(profile) {
   const safeProfile = {};
   for (const [key, value] of Object.entries(profile)) {
     if (!validProfileFields.has(key) || typeof value !== "string") continue;
-    const trimmed = value.trim();
-    if (trimmed) safeProfile[key] = trimmed.slice(0, 240);
+    safeProfile[key] = value.trim().slice(0, 240);
   }
   await chrome.storage.local.set({ profile: safeProfile });
   return { saved: true, fields: Object.keys(safeProfile).length };

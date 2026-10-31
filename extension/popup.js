@@ -23,10 +23,16 @@ const profileLabels = {
   email: /email/i,
   familyIncome: /annual family income|family income|parental income|household income/i,
   percentage: /percentage|percent|marks obtained|aggregate marks|last exam marks/i,
+  qualificationLevel: /highest qualification|qualification level|educational qualification/i,
+  courseLevel: /course level|level of study/i,
   courseYear: /current year|year of study|study year|course year/i,
+  entranceRank: /entrance exam rank|entrance rank|exam rank/i,
   course: /course|stream|class name|degree/i,
   institution: /institution|school name|college name|university name/i,
-  parentOccupation: /parent occupation|guardian occupation|father occupation|mother occupation/i
+  parentOccupation: /parent occupation|guardian occupation|father occupation|mother occupation/i,
+  hasDisability: /disability|person with disability|pwd/i,
+  isOrphan: /orphan/i,
+  receivesOtherScholarship: /other scholarship|receives.*scholarship|currently.*scholarship/i
 };
 
 const documentLabels = [
@@ -156,10 +162,16 @@ function applyValues(profile, files, overwrite) {
     district: /district/i, mobile: /mobile|phone|contact number/i, email: /email/i,
     familyIncome: /annual family income|family income|parental income|household income/i,
     percentage: /percentage|percent|marks obtained|aggregate marks|last exam marks/i,
+    qualificationLevel: /highest qualification|qualification level|educational qualification/i,
+    courseLevel: /course level|level of study/i,
     courseYear: /current year|year of study|study year|course year/i,
+    entranceRank: /entrance exam rank|entrance rank|exam rank/i,
     course: /course|stream|class name|degree/i,
     institution: /institution|school name|college name|university name/i,
-    parentOccupation: /parent occupation|guardian occupation|father occupation|mother occupation/i
+    parentOccupation: /parent occupation|guardian occupation|father occupation|mother occupation/i,
+    hasDisability: /disability|person with disability|pwd/i,
+    isOrphan: /orphan/i,
+    receivesOtherScholarship: /other scholarship|receives.*scholarship|currently.*scholarship/i
   };
   function keyForLabel(label) {
     if (/district/i.test(label)) return "district";
@@ -167,7 +179,7 @@ function applyValues(profile, files, overwrite) {
     if (patterns.courseYear.test(label)) return "courseYear";
     if (/father|guardian/i.test(label)) return "fatherName";
     if (/mother/i.test(label)) return "motherName";
-    for (const key of ["fullName", "dob", "gender", "category", "state", "mobile", "email", "familyIncome", "percentage", "institution", "course"]) {
+    for (const key of ["fullName", "dob", "gender", "category", "state", "mobile", "email", "familyIncome", "percentage", "qualificationLevel", "courseLevel", "courseYear", "entranceRank", "institution", "course", "hasDisability", "isOrphan", "receivesOtherScholarship"]) {
       if (patterns[key].test(label)) return key;
     }
     return null;

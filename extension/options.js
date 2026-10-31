@@ -13,7 +13,7 @@ function makeProfileInput(field, value = "") {
   input.autocomplete = "off";
   input.value = value;
   if (field.key === "dob") input.type = "date";
-  else if (["familyIncome", "percentage", "courseYear"].includes(field.key)) input.type = "number";
+  else if (["familyIncome", "percentage", "courseYear", "entranceRank"].includes(field.key)) input.type = "number";
   else if (field.key === "email") input.type = "email";
   else if (field.key === "mobile") { input.type = "tel"; input.inputMode = "numeric"; input.maxLength = 10; }
   else input.type = "text";
@@ -26,6 +26,11 @@ function makeProfileInput(field, value = "") {
 async function loadProfileForm() {
   const profile = await getProfile();
   profileFields.replaceChildren(...PROFILE_FIELDS.map(field => makeProfileInput(field, profile[field.key] || "")));
+  if (!Object.values(profile).some(value => String(value || "").trim())) {
+    profileStatus.textContent = "No student profile has synced yet. Sign in and open the ScholarSathi Documents or Dashboard page.";
+  } else {
+    profileStatus.textContent = "Student profile is saved in this Chrome profile.";
+  }
 }
 
 profileForm.addEventListener("submit", async event => {
@@ -33,6 +38,11 @@ profileForm.addEventListener("submit", async event => {
   const data = Object.fromEntries(new FormData(profileForm).entries());
   await saveProfile(data);
   profileStatus.textContent = "Profile saved in this Chrome profile.";
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.profile) return;
+  loadProfileForm().catch(error => { profileStatus.textContent = `Could not refresh profile: ${error.message}`; });
 });
 
 function formatSize(bytes) {

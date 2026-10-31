@@ -51,7 +51,7 @@ async function saveProfile(profile) {
   const allowed = new Set(PROFILE_FIELDS.map(field => field.key));
   const clean = {};
   for (const [key, value] of Object.entries(profile || {})) {
-    if (allowed.has(key) && typeof value === "string" && value.trim()) clean[key] = value.trim().slice(0, 240);
+    if (allowed.has(key) && typeof value === "string") clean[key] = value.trim().slice(0, 240);
   }
   await chrome.storage.local.set({ profile: clean });
   return clean;

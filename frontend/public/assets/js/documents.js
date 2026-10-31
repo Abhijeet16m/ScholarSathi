@@ -2,6 +2,7 @@ const list = document.getElementById("document-list");
 const uploadDialog = document.getElementById("upload-dialog");
 const viewDialog = document.getElementById("view-dialog");
 const statusEl = document.getElementById("extension-status");
+const profileSyncStatus = document.getElementById("profile-sync-status");
 const typeSelect = document.getElementById("document-type");
 
 function renderStudentName(value) {
@@ -160,12 +161,26 @@ fetch("/api/auth/me", { credentials: "same-origin" })
   .then(async student => {
     renderStudentName(student.name);
     // Keep the extension profile in sync from Documents as well as Dashboard.
-    if (student.profile && window.ScholarSathiExtension) {
-      try {
-        await window.ScholarSathiExtension.request("SAVE_PROFILE", { profile: student.profile });
-      } catch (error) {
-        console.info("Scholar Assist profile sync is unavailable on this browser.", error.message);
-      }
+    if (!student.profile || typeof student.profile !== "object") {
+      profileSyncStatus.textContent = "The server did not return the student profile.";
+      profileSyncStatus.classList.add("extension-error");
+      return;
+    }
+    if (!window.ScholarSathiExtension) {
+      profileSyncStatus.textContent = "Scholar Assist is not available on this page. Check that the extension is enabled for this website.";
+      profileSyncStatus.classList.add("extension-error");
+      return;
+    }
+    try {
+      const result = await window.ScholarSathiExtension.request("SAVE_PROFILE", { profile: student.profile });
+      profileSyncStatus.textContent = result.fields
+        ? `Synced ${result.fields} profile fields to Scholar Assist in this Chrome profile.`
+        : "The extension received no recognized profile fields. Reload the updated extension and try again.";
+      profileSyncStatus.classList.toggle("extension-error", !result.fields);
+    } catch (error) {
+      console.info("Scholar Assist profile sync failed.", error.message);
+      profileSyncStatus.textContent = `Profile sync failed: ${error.message}`;
+      profileSyncStatus.classList.add("extension-error");
     }
   })
   .catch(() => { window.location.href = "/index.html"; });

@@ -482,8 +482,9 @@ app.get('/api/auth/me', async (req, res, next) => {
   try {
     const result = await pool.query(
       `SELECT id, name, email, father_name, mother_name, date_of_birth, gender, category,
-        domicile_state, district, mobile_number, annual_family_income, qualification_marks,
-        course_name, course_year, institution_name, parent_occupation
+        domicile_state, district, mobile_number, annual_family_income, qualification_level,
+        qualification_marks, course_level, course_name, course_year, entrance_exam_rank,
+        institution_name, parent_occupation, has_disability, is_orphan, receives_other_scholarship
        FROM students WHERE id = $1`,
       [req.session.studentId],
     );
@@ -510,8 +511,14 @@ app.get('/api/auth/me', async (req, res, next) => {
         percentage: student.qualification_marks == null ? '' : String(student.qualification_marks),
         course: student.course_name || '',
         courseYear: student.course_year == null ? '' : String(student.course_year),
+        qualificationLevel: student.qualification_level || '',
+        courseLevel: student.course_level || '',
+        entranceRank: student.entrance_exam_rank == null ? '' : String(student.entrance_exam_rank),
         institution: student.institution_name || '',
         parentOccupation: student.parent_occupation || '',
+        hasDisability: student.has_disability == null ? '' : student.has_disability ? 'Yes' : 'No',
+        isOrphan: student.is_orphan == null ? '' : student.is_orphan ? 'Yes' : 'No',
+        receivesOtherScholarship: student.receives_other_scholarship == null ? '' : student.receives_other_scholarship ? 'Yes' : 'No',
       },
     });
   } catch (error) { next(error); }

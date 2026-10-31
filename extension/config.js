@@ -27,8 +27,14 @@ const PROFILE_FIELDS = [
   { key: "email", label: "Email address" },
   { key: "familyIncome", label: "Annual family income" },
   { key: "percentage", label: "Latest marks / percentage" },
+  { key: "qualificationLevel", label: "Highest qualification" },
+  { key: "courseLevel", label: "Current course level" },
   { key: "course", label: "Current course / class" },
   { key: "courseYear", label: "Current course year" },
+  { key: "entranceRank", label: "Entrance exam rank" },
   { key: "institution", label: "School / college / institution" },
-  { key: "parentOccupation", label: "Parent / guardian occupation" }
+  { key: "parentOccupation", label: "Parent / guardian occupation" },
+  { key: "hasDisability", label: "Disability status" },
+  { key: "isOrphan", label: "Orphan status" },
+  { key: "receivesOtherScholarship", label: "Receives another scholarship" }
 ];
