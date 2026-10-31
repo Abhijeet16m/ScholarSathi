@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScholarSathi | Dashboard</title><link rel="stylesheet" href="/assets/css/styles.css">
+<title>ScholarSathi | Dashboard</title><link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
 <aside class="sidebar">
@@ -22,7 +22,7 @@
 <main class="main">
 <header class="topbar">
   <div><div class="eyebrow">STUDENT WORKSPACE</div></div>
-  <div class="user-actions"><span class="avatar">I</span><span>Ishan</span><button class="logout" id="logout" title="Logout" aria-label="Logout">⇥</button></div>
+  <div class="user-actions"><span class="avatar" id="student-avatar" aria-hidden="true">?</span><span id="student-name">Student</span><button class="logout" id="logout" title="Logout" aria-label="Logout">⇥</button></div>
 </header>
 
 <!-- Dashboard and Discover are intentionally one page, in this order. -->
@@ -67,5 +67,5 @@
 <section class="page-view" id="view-settings"><div class="simple-wrap"><div class="eyebrow">PREFERENCES</div><h2>Settings</h2><div class="panel"><label class="toggle-row"><span>Email deadline reminders</span><input type="checkbox" checked></label><label class="toggle-row"><span>Show saved scholarship updates</span><input type="checkbox" checked></label><p class="muted">Notification delivery requires a backend service and your permission.</p></div></div></section>
 </main>
 <dialog id="eligibility-dialog"><button class="dialog-close" id="dialog-close" aria-label="Close">×</button><div class="eyebrow">EXPLAINABLE ELIGIBILITY</div><h2 id="dialog-title"></h2><div id="dialog-body"></div></dialog>
-<script src="assets/js/Dashboard.js"></script>
+<script src="Dashboard.js"></script>
 </body></html>
