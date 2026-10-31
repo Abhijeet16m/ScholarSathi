@@ -68,7 +68,7 @@ async function buildPdf(rendered, quality) {
 // Main function: returns { blob, pages } or { error: "..." }
 export async function shrinkPdf(inputBlob, maxKB) {
   const data = new Uint8Array(await inputBlob.arrayBuffer());
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const pdf = await pdfjsLib.getDocument({ data, verbosity: 0 }).promise;
 
   if (pdf.numPages > MAX_PAGES) {
     return { error: "PDF has " + pdf.numPages + " pages (limit for shrinking is " + MAX_PAGES + ")" };

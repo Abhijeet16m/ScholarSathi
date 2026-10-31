@@ -18,7 +18,16 @@ fetch("/api/auth/me", { credentials: "same-origin" })
     if (!response.ok) throw new Error("Student session is no longer active.");
     return response.json();
   })
-  .then(student => renderStudentName(student.name))
+  .then(async student => {
+    renderStudentName(student.name);
+    if (student.profile && window.ScholarSathiExtension) {
+      try {
+        await window.ScholarSathiExtension.request("SAVE_PROFILE", { profile: student.profile });
+      } catch (error) {
+        console.info("Scholar Assist profile sync is unavailable on this browser.", error.message);
+      }
+    }
+  })
   .catch(() => { window.location.href = "/index.html"; });
 
 // Sends a POST request to the Express logout route.

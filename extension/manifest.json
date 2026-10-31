@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Scholar Assist (Step 3: Smart Fill)",
-  "version": "0.1.0",
-  "description": "Saves your profile and documents, then fills scholarship forms and attaches resized files. You always press Submit yourself.",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "name": "Scholar Assist (Step 2b: PDF shrink)",
+  "version": "0.0.3",
+  "description": "Fills a practice form and attaches your saved documents, resized to fit.",
+  "permissions": ["activeTab", "scripting"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Scholar Assist"

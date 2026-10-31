@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#153d36">
   <title>Create account — ScholarSathi</title>
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/auth.css">
 </head>
 <body>
   <main class="shell"><div class="page">
@@ -24,10 +24,14 @@
           <div class="profile-grid">
             <div class="field"><label for="name">Full name</label><input id="name" name="name" type="text" placeholder="Your full name" autocomplete="name" maxlength="120" required></div>
             <div class="field"><label for="email">Email address</label><input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" maxlength="254" required></div>
+            <div class="field"><label for="father-name">Father’s / guardian’s name <span class="optional">optional</span></label><input id="father-name" name="father_name" type="text" autocomplete="off" maxlength="120"></div>
+            <div class="field"><label for="mother-name">Mother’s name <span class="optional">optional</span></label><input id="mother-name" name="mother_name" type="text" autocomplete="off" maxlength="120"></div>
+            <div class="field"><label for="mobile-number">Mobile number <span class="optional">optional</span></label><input id="mobile-number" name="mobile_number" type="tel" inputmode="numeric" autocomplete="tel-national" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit number"></div>
+            <div class="field"><label for="district">District <span class="optional">optional</span></label><input id="district" name="district" type="text" autocomplete="address-level2" maxlength="100"></div>
             <div class="field"><label for="date-of-birth">Date of birth</label><input id="date-of-birth" name="date_of_birth" type="date" autocomplete="bday" required></div>
             <div class="field"><label for="gender">Gender</label><select id="gender" name="gender" required><option value="">Choose one</option><option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option></select></div>
             <div class="field"><label for="category">Social category</label><select id="category" name="category" required><option value="">Choose one</option><option>General</option><option>EWS</option><option>OBC-NCL</option><option>SEBC</option><option>SC</option><option>ST</option><option>Other</option></select></div>
-            <div class="field"><label for="domicile-state">Domicile state / UT</label><input id="domicile-state" name="domicile_state" type="text" placeholder="e.g. Assam" maxlength="100" required></div>
+            <div class="field"><label for="domicile-state">Domicile state / UT</label><select id="domicile-state" name="domicile_state" required><option value="">Choose one</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Andaman and Nicobar Islands</option><option>Chandigarh</option><option>Dadra and Nagar Haveli and Daman and Diu</option><option>Delhi</option><option>Jammu and Kashmir</option><option>Ladakh</option><option>Lakshadweep</option><option>Puducherry</option></select></div>
             <div class="field"><label for="family-income">Annual family income (₹)</label><input id="family-income" name="annual_family_income" type="number" min="0" max="100000000" step="0.01" placeholder="e.g. 250000" required></div>
             <div class="field"><label for="qualification-level">Highest qualification completed</label><select id="qualification-level" name="qualification_level" required><option value="">Choose one</option><option>Class 10</option><option>Class 12</option><option>Diploma</option><option>Undergraduate degree</option><option>Postgraduate degree</option><option>Other</option></select></div>
             <div class="field"><label for="qualification-marks">Marks in that qualification (%) <span class="optional">optional</span></label><input id="qualification-marks" name="qualification_marks" type="number" min="0" max="100" step="0.01" placeholder="e.g. 78.5"></div>

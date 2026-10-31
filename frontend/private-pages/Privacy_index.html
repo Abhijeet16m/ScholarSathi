@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScholarSathi | Privacy Center</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="dashboard.html">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5.5c3.2-1.4 6.2-.8 9 1.5v13c-2.8-2.3-5.8-2.9-9-1.5z"/><path d="M21 5.5c-3.2-1.4-6.2-.8-9 1.5v13c2.8-2.3 5.8-2.9 9-1.5z"/></svg></span>
+      <span>Scholar<span class="accent">Sathi</span></span>
+    </a>
+    <div class="nav-label">Student workspace</div>
+    <nav class="nav-menu" aria-label="Main navigation">
+      <a class="nav-link" href="dashboard.html"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a>
+      <a class="nav-link" href="Discover_index.html"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><span>Discover Scholarships</span></a>
+      <a class="nav-link" href="Profile_index.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4"/><path d="M4.5 21v-2.2a7.5 7.5 0 0 1 15 0V21"/></svg><span>My Profile</span></a>
+      <a class="nav-link" href="Application_index.html"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="18" rx="2"/><path d="M9 3.5v4h6v-4M9 12h6M9 16h6"/></svg><span>My Applications</span><span class="nav-badge">2</span></a>
+      <a class="nav-link" href="documents.html"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v6h5"/></svg><span>Documents</span></a>
+      <a class="nav-link" href="Deadline_index.html"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><span>Deadline Alerts</span></a>
+      <a class="nav-link active" href="Privacy_index.html" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/></svg><span>Privacy Center</span></a>
+    </nav>
+    <div class="privacy-note"><span class="lock">♙</span><div><strong>Your data, your choice</strong><p>Profile details stay in this browser demo.</p></div></div>
+    <a class="sidebar-profile" href="Profile_index.html"><span class="avatar">MR</span><span><strong>Mira Rao</strong><small>Student profile</small></span></a>
+  </aside>
+
+  <main class="main-panel">
+    <header class="topbar">
+      <div><div class="eyebrow">Student workspace</div><h1>Privacy Center</h1></div>
+      <div class="user-actions">
+        <a class="profile-summary" href="Profile_index.html" aria-label="Open profile"><span class="avatar" id="avatar-initials">MR</span><span class="profile-name" id="profile-name">Mira Rao</span></a>
+        <button class="logout-button" id="logout-button" type="button" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></button>
+      </div>
+    </header>
+
+    <section class="privacy-content">
+      <div class="section-heading">
+        <span class="eyebrow">Privacy center</span>
+        <h2>You are in control.</h2>
+        <p>Your account profile is stored in Neon for scholarship matching. Document files stay in the Scholar Assist extension IndexedDB in this Chrome profile and are not uploaded to ScholarSathi. Extension storage is not encrypted yet.</p>
+      </div>
+
+      <div class="privacy-grid">
+        <article class="privacy-card">
+          <svg class="card-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/></svg>
+          <h3>What is used</h3>
+          <p>Education and eligibility details from your account are intended for scholarship matching. The current scholarship results are sample data.</p>
+        </article>
+
+        <article class="privacy-card">
+          <svg class="card-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
+          <h3>What is not collected</h3>
+          <p>The website backend does not receive document files. The extension may store documents you choose in this Chrome profile for form autofill.</p>
+        </article>
+
+        <article class="privacy-card clear-card">
+          <h3>Clear profile data</h3>
+          <p>Account deletion and clearing extension documents are not connected on this page yet.</p>
+          <button class="clear-button" id="clear-profile" type="button">Clear profile</button>
+        </article>
+      </div>
+      <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="confirm-modal" hidden>
+  <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+    <div class="warning-icon">!</div>
+    <h2 id="confirm-title">Clear profile data?</h2>
+    <p id="confirm-description">This control does not delete your Neon account or extension documents.</p>
+    <div class="dialog-actions">
+      <button class="cancel-button" id="cancel-clear" type="button">Cancel</button>
+      <button class="confirm-clear-button" id="confirm-clear" type="button">Clear profile data</button>
+    </div>
+  </section>
+</div>
+<script src="assets/js/Privacy_script.js"></script>
+</body>
+</html>

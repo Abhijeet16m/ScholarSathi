@@ -1,75 +1,38 @@
-/*
-  Database API placeholders — change these to match your backend:
-  GET    /api/profile       Load the logged-in student's saved profile
-  PUT    /api/profile       Create/update profile fields in the database
-  DELETE /api/profile       Clear profile (optional)
-  POST   /logout            Sign out (change to your auth provider's route)
-*/
-const API_ENDPOINTS = {
-  profile: "/api/profile",
-  logout: "/logout"
-};
-
 const form = document.getElementById("profile-form");
 const statusMessage = document.getElementById("status-message");
-const name = "Mira Rao"; // Replace with authenticated user's name.
-document.getElementById("profile-name").textContent = name;
-document.getElementById("avatar-initials").textContent =
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "ST";
+const nameEl = document.getElementById("profile-name");
+const avatarEl = document.getElementById("avatar-initials");
 
-// Optional: load profile from your backend when the page opens.
-async function loadProfile() {
-  // Uncomment when your GET /api/profile endpoint is available.
-  // try {
-  //   const response = await fetch(API_ENDPOINTS.profile, { credentials: "include" });
-  //   if (!response.ok) throw new Error("Could not load profile");
-  //   const data = await response.json();
-  //   Object.entries(data).forEach(([key, value]) => {
-  //     const field = form.elements.namedItem(key);
-  //     if (field && value != null) field.value = value;
-  //   });
-  // } catch (error) {
-  //   statusMessage.textContent = "Could not load saved profile. You can still edit the form.";
-  // }
+function updateStudentName(name) {
+  const fullName = String(name || "Student").trim() || "Student";
+  nameEl.textContent = fullName;
+  avatarEl.textContent = fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "ST";
 }
-loadProfile();
 
-form.addEventListener("submit", async event => {
+fetch("/api/auth/me", { credentials: "same-origin" })
+  .then(response => {
+    if (!response.ok) throw new Error("Your sign-in session has expired.");
+    return response.json();
+  })
+  .then(student => updateStudentName(student.name))
+  .catch(() => { window.location.href = "/index.html"; });
+
+form.addEventListener("submit", event => {
   event.preventDefault();
-  const data = Object.fromEntries(new FormData(form).entries());
-  const marks = data.marks === "" ? null : Number(data.marks);
-  if (marks !== null && (marks < 0 || marks > 100)) {
+  const marks = Number(form.elements.namedItem("marks").value);
+  if (!Number.isNaN(marks) && (marks < 0 || marks > 100)) {
     statusMessage.textContent = "Marks or percentage must be between 0 and 100.";
     return;
   }
-  data.marks = marks;
-
-  // Demo fallback: show feedback but do not pretend data was saved to a database.
-  // Enable the fetch block once your backend endpoint is implemented:
-  /*
-  try {
-    const response = await fetch(API_ENDPOINTS.profile, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error("Save failed");
-    statusMessage.textContent = "Profile saved successfully.";
-  } catch (error) {
-    statusMessage.textContent = "Unable to save profile. Please try again.";
-  }
-  */
-  statusMessage.textContent = "Form validated. Connect PUT /api/profile to save these details to your database.";
+  statusMessage.textContent = "This profile editor is a demo and does not save changes yet. Your registered profile remains unchanged.";
 });
 
 form.addEventListener("reset", () => {
-  statusMessage.textContent = "Changes cleared from the form.";
+  statusMessage.textContent = "Unsaved form edits were cleared.";
 });
 
-document.getElementById("logout-button").addEventListener("click", () => {
-  if (confirm("Do you want to log out?")) {
-    // Replace this navigation with your real authentication sign-out flow.
-    window.location.href = API_ENDPOINTS.logout;
-  }
+document.getElementById("logout-button").addEventListener("click", async () => {
+  if (!window.confirm("Do you want to log out?")) return;
+  const response = await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+  if (response.ok) window.location.href = "/index.html";
 });
