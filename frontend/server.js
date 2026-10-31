@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import crypto from 'node:crypto';
 import { existsSync } from 'node:fs';
-import fs from 'node:fs/promises';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,10 +10,8 @@ import connectPgSimple from 'connect-pg-simple';
 import pg from 'pg';
 import { rateLimit } from 'express-rate-limit';
 import nodemailer from 'nodemailer';
-import multer from 'multer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const privateUploadRoot = path.join(__dirname, 'private_uploads');
 const { Pool } = pg;
 const scrypt = promisify(crypto.scrypt);
 const app = express();
@@ -46,50 +43,6 @@ const mailer = nodemailer.createTransport({
 });
 const isProduction = process.env.NODE_ENV === 'production';
 
-const documentTypes = {
-  aadhaar_card: 'Aadhaar card',
-  apaar_id: 'APAAR ID',
-  marksheet_10: '10th marksheet',
-  marksheet_12: '12th marksheet',
-  income_certificate: 'Income certificate',
-  domicile_certificate: 'Domicile certificate',
-  institution_certificate: 'Institution certificate',
-  category_certificate: 'Category certificate',
-  bank_passbook: 'Bank passbook',
-};
-const extensionByMime = {
-  'application/pdf': '.pdf',
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-};
-const documentUploadFields = Object.keys(documentTypes).map(name => ({ name, maxCount: 1 }));
-const registrationDocumentUpload = multer({
-  storage: multer.diskStorage({
-    destination(req, file, callback) {
-      const pendingId = req.session?.registration?.pendingId;
-      if (!pendingId) return callback(new Error('No pending registration for file upload.'));
-      const pendingDirectory = path.join(privateUploadRoot, 'pending', pendingId);
-      fs.mkdir(pendingDirectory, { recursive: true }).then(
-        () => callback(null, pendingDirectory),
-        callback,
-      );
-    },
-    filename(req, file, callback) {
-      callback(null, `${crypto.randomUUID()}${extensionByMime[file.mimetype] || '.bin'}`);
-    },
-  }),
-  limits: { files: Object.keys(documentTypes).length, fileSize: 10 * 1024 * 1024, fields: 4 },
-  fileFilter(req, file, callback) {
-    if (!Object.hasOwn(documentTypes, file.fieldname)) {
-      return callback(new Error('Unexpected document field.'));
-    }
-    if (!Object.hasOwn(extensionByMime, file.mimetype)) {
-      return callback(new Error('Upload PDF, JPG, or PNG documents only.'));
-    }
-    return callback(null, true);
-  },
-});
-
 if (isProduction) app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
@@ -108,9 +61,18 @@ app.use(session({
 }));
 const organizedPublicRoot = path.join(__dirname, 'frontend', 'public');
 const publicRoot = existsSync(organizedPublicRoot) ? organizedPublicRoot : path.join(__dirname, 'public');
-app.get(['/dashboard.html', '/documents.html'], (req, res, next) => {
+const protectedPages = new Map([
+  ['/dashboard.html', 'dashboard.html'],
+  ['/documents.html', 'documents.html'],
+  ['/Discover_index.html', 'Discover_index.html'],
+  ['/Profile_index.html', 'Profile_index.html'],
+  ['/Application_index.html', 'Application_index.html'],
+  ['/Deadline_index.html', 'Deadline_index.html'],
+  ['/Privacy_index.html', 'Privacy_index.html'],
+]);
+app.get([...protectedPages.keys()], (req, res, next) => {
   if (!req.session.studentId) return res.redirect(303, '/index.html');
-  return res.sendFile(path.join(publicRoot, req.path.slice(1)), error => { if (error) next(error); });
+  return res.sendFile(path.join(__dirname, 'private-pages', protectedPages.get(req.path)), error => { if (error) next(error); });
 });
 app.use(express.static(publicRoot, { index: 'index.html' }));
 
@@ -219,6 +181,10 @@ app.post('/api/auth/registration/request-otp', otpLimiter, async (req, res, next
       is_orphan: optionalBoolean(req.body.is_orphan),
       parent_occupation: String(req.body.parent_occupation || '').trim(),
       receives_other_scholarship: optionalBoolean(req.body.receives_other_scholarship),
+      father_name: String(req.body.father_name || '').trim(),
+      mother_name: String(req.body.mother_name || '').trim(),
+      mobile_number: String(req.body.mobile_number || '').trim(),
+      district: String(req.body.district || '').trim(),
     };
     const validGenders = ['Female', 'Male', 'Other', 'Prefer not to say'];
     const validCategories = ['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other'];
@@ -232,7 +198,9 @@ app.post('/api/auth/registration/request-otp', otpLimiter, async (req, res, next
       !profile.domicile_state || profile.domicile_state.length > 100 || profile.annual_family_income === null || Number.isNaN(profile.annual_family_income) ||
       !validQualifications.includes(profile.qualification_level) || !validCourseLevels.includes(profile.course_level) ||
       !profile.course_name || profile.course_name.length > 160 || profile.course_year === null || Number.isNaN(profile.course_year) || invalidOptionalNumber ||
-      profile.institution_name.length > 200 || profile.parent_occupation.length > 160 || invalidBoolean
+      profile.institution_name.length > 200 || profile.parent_occupation.length > 160 ||
+      profile.father_name.length > 120 || profile.mother_name.length > 120 || profile.district.length > 100 ||
+      (profile.mobile_number && !/^\d{10}$/.test(profile.mobile_number)) || invalidBoolean
     ) {
       return show(res, 'Check your details', 'Please review the required profile fields and numeric values, then try again.', 400, '/register.html', 'Back to registration');
     }
@@ -302,75 +270,38 @@ function requireVerifiedRegistration(req, res, next) {
   return next();
 }
 
-async function removeFiles(files = []) {
-  await Promise.all(files.map(file => fs.rm(file.path, { force: true }).catch(() => {})));
-}
-
-app.post('/api/auth/register', authLimiter, requireVerifiedRegistration, registrationDocumentUpload.fields(documentUploadFields), async (req, res, next) => {
-  const uploadedFiles = Object.values(req.files || {}).flat();
+app.post('/api/auth/register', authLimiter, requireVerifiedRegistration, async (req, res, next) => {
   const registration = req.session.registration;
   try {
     const password = String(req.body.password || '');
     const confirmation = String(req.body.password_confirmation || '');
     if (password.length < 8 || password.length > 128) {
-      await removeFiles(uploadedFiles);
       return show(res, 'Choose a stronger password', 'Your password must be between 8 and 128 characters.', 400, '/set-password.html', 'Try again');
     }
     if (password !== confirmation) {
-      await removeFiles(uploadedFiles);
       return show(res, 'Passwords do not match', 'Enter the same password in both password fields.', 400, '/set-password.html', 'Try again');
     }
     const passwordHash = await hashPassword(password);
-    const client = await pool.connect();
-    let student;
-    const movedFiles = [];
-    try {
-      await client.query('BEGIN');
-      const result = await client.query(
-        `INSERT INTO students (
-          name, email, password_hash, email_verified_at, date_of_birth, gender, category, domicile_state,
-          annual_family_income, qualification_level, qualification_marks, course_level, course_name, course_year,
-          entrance_exam_rank, institution_name, has_disability, is_orphan, parent_occupation, receives_other_scholarship
-        ) VALUES (
-          $1, $2, $3, NOW(), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
-        ) ON CONFLICT (email) DO NOTHING RETURNING id, name, email`,
-        [
-          registration.name, registration.email, passwordHash, registration.date_of_birth, registration.gender,
-          registration.category, registration.domicile_state, registration.annual_family_income, registration.qualification_level,
-          registration.qualification_marks, registration.course_level, registration.course_name, registration.course_year,
-          registration.entrance_exam_rank, registration.institution_name || null, registration.has_disability, registration.is_orphan,
-          registration.parent_occupation || null, registration.receives_other_scholarship,
-        ],
-      );
-      if (!result.rowCount) {
-        await client.query('ROLLBACK');
-        await removeFiles(uploadedFiles);
-        return show(res, 'Account already exists', 'This email is already registered. Please log in instead.', 409, '/', 'Go to login');
-      }
-      student = result.rows[0];
-      const studentDirectory = path.join(privateUploadRoot, 'students', String(student.id));
-      await fs.mkdir(studentDirectory, { recursive: true });
-      for (const file of uploadedFiles) {
-        const storageName = `${crypto.randomUUID()}${extensionByMime[file.mimetype]}`;
-        const destination = path.join(studentDirectory, storageName);
-        await fs.rename(file.path, destination);
-        movedFiles.push(destination);
-        await client.query(
-          `INSERT INTO student_documents (student_id, document_type, original_name, storage_key, mime_type, file_size)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [student.id, file.fieldname, path.basename(file.originalname).slice(0, 255), path.join('students', String(student.id), storageName), file.mimetype, file.size],
-        );
-      }
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK').catch(() => {});
-      await removeFiles(uploadedFiles);
-      await Promise.all(movedFiles.map(file => fs.rm(file, { force: true }).catch(() => {})));
-      throw error;
-    } finally {
-      client.release();
-    }
-    await fs.rm(path.join(privateUploadRoot, 'pending', registration.pendingId), { recursive: true, force: true }).catch(() => {});
+    const result = await pool.query(
+      `INSERT INTO students (
+        name, email, password_hash, email_verified_at, date_of_birth, gender, category, domicile_state,
+        annual_family_income, qualification_level, qualification_marks, course_level, course_name, course_year,
+        entrance_exam_rank, institution_name, has_disability, is_orphan, parent_occupation, receives_other_scholarship,
+        father_name, mother_name, mobile_number, district
+      ) VALUES (
+        $1, $2, $3, NOW(), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+      ) ON CONFLICT (email) DO NOTHING RETURNING id, name, email`,
+      [
+        registration.name, registration.email, passwordHash, registration.date_of_birth, registration.gender,
+        registration.category, registration.domicile_state, registration.annual_family_income, registration.qualification_level,
+        registration.qualification_marks, registration.course_level, registration.course_name, registration.course_year,
+        registration.entrance_exam_rank, registration.institution_name || null, registration.has_disability, registration.is_orphan,
+        registration.parent_occupation || null, registration.receives_other_scholarship, registration.father_name || null,
+        registration.mother_name || null, registration.mobile_number || null, registration.district || null,
+      ],
+    );
+    if (!result.rowCount) return show(res, 'Account already exists', 'This email is already registered. Please log in instead.', 409, '/', 'Go to login');
+    const student = result.rows[0];
     req.session.regenerate(error => {
       if (error) return next(error);
       req.session.studentId = student.id;
@@ -380,38 +311,6 @@ app.post('/api/auth/register', authLimiter, requireVerifiedRegistration, registr
         return res.redirect(303, '/dashboard.html');
       });
     });
-  } catch (error) { next(error); }
-});
-
-function requireStudentAuth(req, res, next) {
-  if (!req.session.studentId) return res.status(401).json({ error: 'Sign in to view your documents.' });
-  return next();
-}
-
-app.get('/api/documents', requireStudentAuth, async (req, res, next) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, document_type, original_name, mime_type, file_size, uploaded_at
-       FROM student_documents WHERE student_id = $1 ORDER BY uploaded_at DESC`,
-      [req.session.studentId],
-    );
-    return res.json({ documents: result.rows.map(row => ({ ...row, label: documentTypes[row.document_type] || row.document_type })) });
-  } catch (error) { next(error); }
-});
-
-app.get('/api/documents/:id/download', requireStudentAuth, async (req, res, next) => {
-  try {
-    const result = await pool.query(
-      'SELECT original_name, storage_key, mime_type FROM student_documents WHERE id = $1 AND student_id = $2',
-      [req.params.id, req.session.studentId],
-    );
-    if (!result.rowCount) return res.status(404).type('text').send('Document not found.');
-    const document = result.rows[0];
-    const absolutePath = path.resolve(privateUploadRoot, document.storage_key);
-    if (!absolutePath.startsWith(`${path.resolve(privateUploadRoot)}${path.sep}`)) return res.status(404).type('text').send('Document not found.');
-    res.setHeader('Content-Type', document.mime_type);
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    return res.download(absolutePath, document.original_name, error => { if (error && !res.headersSent) next(error); });
   } catch (error) { next(error); }
 });
 
@@ -578,23 +477,47 @@ app.post('/api/auth/logout', (req, res, next) => {
   });
 });
 
-app.get('/api/auth/me', (req, res) => {
+app.get('/api/auth/me', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ authenticated: false });
-  return res.json({ authenticated: true, id: req.session.studentId, name: req.session.studentName });
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email, father_name, mother_name, date_of_birth, gender, category,
+        domicile_state, district, mobile_number, annual_family_income, qualification_marks,
+        course_name, course_year, institution_name, parent_occupation
+       FROM students WHERE id = $1`,
+      [req.session.studentId],
+    );
+    const student = result.rows[0];
+    if (!student) return res.status(401).json({ authenticated: false });
+    const categoryMap = { General: 'GEN', 'OBC-NCL': 'OBC', SEBC: 'OBC', SC: 'SC', ST: 'ST', EWS: 'EWS' };
+    const genderMap = { Female: 'female', Male: 'male', Other: 'other' };
+    return res.json({
+      authenticated: true,
+      id: student.id,
+      name: student.name,
+      profile: {
+        fullName: student.name || '',
+        fatherName: student.father_name || '',
+        motherName: student.mother_name || '',
+        dob: student.date_of_birth || '',
+        gender: genderMap[student.gender] || '',
+        category: categoryMap[student.category] || '',
+        state: student.domicile_state || '',
+        district: student.district || '',
+        mobile: student.mobile_number || '',
+        email: student.email || '',
+        familyIncome: student.annual_family_income == null ? '' : String(student.annual_family_income),
+        percentage: student.qualification_marks == null ? '' : String(student.qualification_marks),
+        course: student.course_name || '',
+        courseYear: student.course_year == null ? '' : String(student.course_year),
+        institution: student.institution_name || '',
+        parentOccupation: student.parent_occupation || '',
+      },
+    });
+  } catch (error) { next(error); }
 });
 
 app.use((error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    const pendingId = req.session?.registration?.pendingId;
-    if (pendingId) void fs.rm(path.join(privateUploadRoot, 'pending', pendingId), { recursive: true, force: true }).catch(() => {});
-    const status = error.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
-    return show(res, 'Document upload problem', error.code === 'LIMIT_FILE_SIZE' ? 'Each document must be 10 MB or smaller.' : 'Check the selected documents and try again.', status, '/set-password.html', 'Back to registration');
-  }
-  if (error.message === 'Upload PDF, JPG, or PNG documents only.' || error.message === 'Unexpected document field.') {
-    const pendingId = req.session?.registration?.pendingId;
-    if (pendingId) void fs.rm(path.join(privateUploadRoot, 'pending', pendingId), { recursive: true, force: true }).catch(() => {});
-    return show(res, 'Document upload problem', error.message, 400, '/set-password.html', 'Back to registration');
-  }
   console.error(error);
   if (res.headersSent) return next(error);
   return show(res, 'Something went wrong', 'The request could not be completed. Please try again in a moment.', 500);
@@ -623,6 +546,10 @@ async function start() {
     is_orphan BOOLEAN,
     parent_occupation TEXT,
     receives_other_scholarship BOOLEAN,
+    father_name TEXT,
+    mother_name TEXT,
+    mobile_number TEXT,
+    district TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await pool.query(`ALTER TABLE students
@@ -641,24 +568,23 @@ async function start() {
     ADD COLUMN IF NOT EXISTS has_disability BOOLEAN,
     ADD COLUMN IF NOT EXISTS is_orphan BOOLEAN,
     ADD COLUMN IF NOT EXISTS parent_occupation TEXT,
-    ADD COLUMN IF NOT EXISTS receives_other_scholarship BOOLEAN`);
-  await pool.query(`CREATE TABLE IF NOT EXISTS student_documents (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    document_type TEXT NOT NULL CHECK (document_type IN (${Object.keys(documentTypes).map(type => `'${type}'`).join(', ')})),
-    original_name TEXT NOT NULL,
-    storage_key TEXT NOT NULL UNIQUE,
-    mime_type TEXT NOT NULL CHECK (mime_type IN ('application/pdf', 'image/jpeg', 'image/png')),
-    file_size BIGINT NOT NULL CHECK (file_size > 0 AND file_size <= 10485760),
-    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`);
-  await pool.query('CREATE INDEX IF NOT EXISTS student_documents_student_id_idx ON student_documents(student_id)');
+    ADD COLUMN IF NOT EXISTS receives_other_scholarship BOOLEAN,
+    ADD COLUMN IF NOT EXISTS father_name TEXT,
+    ADD COLUMN IF NOT EXISTS mother_name TEXT,
+    ADD COLUMN IF NOT EXISTS mobile_number TEXT,
+    ADD COLUMN IF NOT EXISTS district TEXT`);
   app.listen(port, () => console.log(`ScholarSathi auth server listening on http://localhost:${port}`));
 }
-start().catch(error => {
-  console.error('Could not start the auth server:', error);
-  process.exit(1);
-});
+export default app;
+
+// Vercel imports the Express app as a function. Local `npm start` still runs
+// migrations and opens the HTTP listener. Apply schema.sql before production deploys.
+if (process.env.VERCEL !== '1') {
+  start().catch(error => {
+    console.error('Could not start the auth server:', error);
+    process.exit(1);
+  });
+}
 
 
 

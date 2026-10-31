@@ -1,20 +1,8 @@
-/*
-  Replace these placeholders with your actual backend routes.
-  upload: POST /api/documents (multipart/form-data)
-  list: GET /api/documents
-  view: GET /api/documents/:id
-  remove: DELETE /api/documents/:id
-  updateStatus: PATCH /api/documents/:id/status
-  logout: your app's sign-out endpoint
-*/
-const API_ENDPOINTS = {
-  upload: "/api/documents",
-  list: "/api/documents",
-  view: "/api/documents/:id",
-  remove: "/api/documents/:id",
-  updateStatus: "/api/documents/:id/status",
-  logout: "/api/auth/logout"
-};
+const list = document.getElementById("document-list");
+const uploadDialog = document.getElementById("upload-dialog");
+const viewDialog = document.getElementById("view-dialog");
+const statusEl = document.getElementById("extension-status");
+const typeSelect = document.getElementById("document-type");
 
 function renderStudentName(value) {
   const fullName = String(value || "Student").trim() || "Student";
@@ -23,23 +11,8 @@ function renderStudentName(value) {
     fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "ST";
 }
 
-renderStudentName("Student");
-fetch("/api/auth/me", { credentials: "same-origin" })
-  .then(response => {
-    if (!response.ok) throw new Error("Student session is no longer active.");
-    return response.json();
-  })
-  .then(student => renderStudentName(student.name))
-  .catch(() => { window.location.href = "/index.html"; });
-
-const list = document.getElementById("document-list");
-const uploadDialog = document.getElementById("upload-dialog");
-const viewDialog = document.getElementById("view-dialog");
-
-function updateCounts() {
-  const rows = [...list.querySelectorAll(".document-row")];
-  document.getElementById("ready-count").textContent = rows.filter(row => row.dataset.ready === "true").length;
-  document.getElementById("total-count").textContent = rows.length;
+function formatSize(bytes) {
+  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
 function checkIcon() {
@@ -51,56 +24,91 @@ function checkIcon() {
   return svg;
 }
 
+function updateCounts(ready, total) {
+  document.getElementById("ready-count").textContent = String(ready);
+  document.getElementById("total-count").textContent = String(total);
+}
+
+function makeAction(label, action, className) {
+  const button = document.createElement("button");
+  button.className = `row-action ${className || ""}`.trim();
+  button.type = "button";
+  button.dataset.action = action;
+  button.textContent = label;
+  return button;
+}
+
+function makeRow(option, saved) {
+  const row = document.createElement("article");
+  row.className = "document-row";
+  row.dataset.document = option.textContent;
+  row.dataset.type = option.value;
+  row.dataset.ready = saved ? "true" : "false";
+
+  const statusIcon = document.createElement("span");
+  statusIcon.className = saved ? "status-check ready" : "status-check";
+  statusIcon.setAttribute("aria-label", saved ? "Saved in Chrome" : "Not saved");
+  if (saved) statusIcon.appendChild(checkIcon());
+
+  const info = document.createElement("div");
+  info.className = "document-info";
+  const title = document.createElement("strong");
+  title.textContent = option.textContent;
+  const detail = document.createElement("small");
+  detail.textContent = saved ? `Saved locally: ${saved.name} · ${formatSize(saved.size)}` : "Not saved in this Chrome profile";
+  info.append(title, detail);
+
+  const actions = document.createElement("div");
+  actions.className = "row-actions";
+  if (saved) {
+    actions.append(makeAction("Open", "view", "view-action"), makeAction("Remove", "remove", "remove-action"));
+  }
+  row.append(statusIcon, info, actions);
+  return row;
+}
+
+async function refreshDocuments() {
+  try {
+    if (!window.ScholarSathiExtension) throw new Error("Scholar Assist extension is not available on this page.");
+    const response = await window.ScholarSathiExtension.request("LIST_DOCUMENTS");
+    const savedDocs = new Map(response.documents.map(doc => [doc.type, doc]));
+    const options = [...typeSelect.options].filter(option => option.value);
+    list.replaceChildren(...options.map(option => makeRow(option, savedDocs.get(option.value))));
+    updateCounts(savedDocs.size, options.length);
+    statusEl.textContent = "Document files and this checklist stay in the Scholar Assist extension storage on this Chrome profile. The website server and Neon do not receive the files.";
+    statusEl.classList.remove("extension-error");
+  } catch (error) {
+    list.replaceChildren();
+    updateCounts(0, [...typeSelect.options].filter(option => option.value).length);
+    statusEl.textContent = `${error.message} Install or enable the extension, then reload this page.`;
+    statusEl.classList.add("extension-error");
+  }
+}
+
 list.addEventListener("click", async event => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
   const row = button.closest(".document-row");
-  const name = button.dataset.name;
-  const id = row.dataset.id || "DOCUMENT_ID";
+  const type = row.dataset.type;
+  const title = row.dataset.document;
 
-  if (button.dataset.action === "view") {
-    document.getElementById("view-title").textContent = name;
-    document.getElementById("view-message").textContent =
-      `Connect your secure document API to view this file: ${API_ENDPOINTS.view.replace(":id", encodeURIComponent(id))}`;
-    document.getElementById("view-endpoint-link").href =
-      API_ENDPOINTS.view.replace(":id", encodeURIComponent(id));
-    viewDialog.showModal();
-    return;
-  }
-
-  if (button.dataset.action === "remove") {
-    if (!window.confirm(`Remove "${name}" from your document list?`)) return;
-
-    // Demo mode removes the row from this page. Connect the DELETE request below
-    // to remove the stored document from your server as well.
-    row.remove();
-    updateCounts();
-
-    // Production example:
-    // const response = await fetch(API_ENDPOINTS.remove.replace(":id", encodeURIComponent(id)), {
-    //   method: "DELETE", credentials: "include"
-    // });
-    // if (!response.ok) { alert("Could not remove document."); return; }
-    return;
-  }
-
-  if (button.dataset.action === "mark") {
-    row.dataset.ready = "true";
-    const status = row.querySelector(".status-check");
-    status.classList.add("ready");
-    status.replaceChildren(checkIcon());
-    status.setAttribute("aria-label", "Ready");
-    row.querySelector(".document-info small").textContent = "Marked available";
-    button.textContent = "Ready";
-    button.disabled = true;
-    updateCounts();
-
-    // Production example:
-    // await fetch(API_ENDPOINTS.updateStatus.replace(":id", encodeURIComponent(id)), {
-    //   method: "PATCH", credentials: "include",
-    //   headers: {"Content-Type": "application/json"},
-    //   body: JSON.stringify({ready: true})
-    // });
+  try {
+    if (button.dataset.action === "remove") {
+      if (!window.confirm(`Remove ${title} from this Chrome profile?`)) return;
+      await window.ScholarSathiExtension.request("DELETE_DOCUMENT", { type });
+      await refreshDocuments();
+    } else if (button.dataset.action === "view") {
+      const doc = await window.ScholarSathiExtension.request("GET_DOCUMENT", { type }, 60000);
+      document.getElementById("view-title").textContent = title;
+      document.getElementById("view-message").textContent = `${doc.name} is stored locally in Chrome. Use this link to open or download the saved copy.`;
+      const link = document.getElementById("view-endpoint-link");
+      link.href = doc.dataUrl;
+      link.download = doc.name;
+      viewDialog.showModal();
+    }
+  } catch (error) {
+    statusEl.textContent = `Could not access Chrome storage: ${error.message}`;
+    statusEl.classList.add("extension-error");
   }
 });
 
@@ -112,76 +120,44 @@ document.getElementById("close-view-bottom").addEventListener("click", () => vie
 
 document.getElementById("upload-form").addEventListener("submit", async event => {
   event.preventDefault();
-  const title = document.getElementById("document-title").value.trim();
+  const type = typeSelect.value;
   const file = document.getElementById("document-file").files[0];
-  if (!title || !file) return;
-
-  // Demo mode: adds a checklist row only; it does not send file bytes to a server.
-  const row = document.createElement("article");
-  row.className = "document-row";
-  row.dataset.document = title;
-  row.dataset.ready = "true";
-  row.dataset.id = "";
-  const status = document.createElement("span");
-  status.className = "status-check ready";
-  status.setAttribute("aria-label", "Ready");
-  status.appendChild(checkIcon());
-  const info = document.createElement("div");
-  info.className = "document-info";
-  const strong = document.createElement("strong");
-  strong.textContent = title;
-  const small = document.createElement("small");
-  small.textContent = `Selected: ${file.name} (demo only — not uploaded)`;
-  info.append(strong, small);
-
-  const actions = document.createElement("div");
-  actions.className = "row-actions";
-  const view = document.createElement("button");
-  view.className = "row-action view-action";
-  view.type = "button";
-  view.dataset.action = "view";
-  view.dataset.name = title;
-  view.textContent = "View";
-  const remove = document.createElement("button");
-  remove.className = "row-action remove-action";
-  remove.type = "button";
-  remove.dataset.action = "remove";
-  remove.dataset.name = title;
-  remove.textContent = "Remove";
-  actions.append(view, remove);
-  row.append(status, info, actions);
-  list.appendChild(row);
-  updateCounts();
-  uploadDialog.close();
-  event.target.reset();
-
-  // Production upload example:
-  // const data = new FormData();
-  // data.append("title", title);
-  // data.append("file", file);
-  // const response = await fetch(API_ENDPOINTS.upload, {
-  //   method: "POST", body: data, credentials: "include"
-  // });
-  // if (!response.ok) alert("Upload failed.");
+  if (!type || !file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    statusEl.textContent = "Choose a file no larger than 10 MB.";
+    statusEl.classList.add("extension-error");
+    return;
+  }
+  try {
+    statusEl.textContent = "Saving this file in Chrome extension storage…";
+    const dataUrl = await window.ScholarSathiExtension.readFile(file);
+    await window.ScholarSathiExtension.request("SAVE_DOCUMENT", { type, name: file.name, mime: file.type, dataUrl }, 60000);
+    uploadDialog.close();
+    event.target.reset();
+    await refreshDocuments();
+  } catch (error) {
+    statusEl.textContent = `Could not save the document locally: ${error.message}`;
+    statusEl.classList.add("extension-error");
+  }
 });
 
 document.getElementById("logout-button").addEventListener("click", async () => {
   if (!window.confirm("Do you want to log out?")) return;
-
   try {
-    const response = await fetch(API_ENDPOINTS.logout, {
-      method: "POST",
-      credentials: "include"
-    });
+    const response = await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
     if (!response.ok) throw new Error("Logout request failed.");
-    window.location.href = "/";
+    window.location.href = "/index.html";
   } catch (error) {
-    console.error(error);
-    window.alert("Could not log out. Please try again.");
+    window.alert(`Could not log out: ${error.message}`);
   }
 });
 
-updateCounts();
+fetch("/api/auth/me", { credentials: "same-origin" })
+  .then(response => {
+    if (!response.ok) throw new Error("Your sign-in session has expired.");
+    return response.json();
+  })
+  .then(student => renderStudentName(student.name))
+  .catch(() => { window.location.href = "/index.html"; });
 
-
-
+refreshDocuments();

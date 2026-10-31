@@ -4,11 +4,19 @@ const API_ENDPOINTS = {
   eligibility: "/api/scholarships/:id/eligibility",
   save: "/api/scholarships/:id/save",
   profile: "profile.html",
-  logout: "/logout"
+  logout: "/api/auth/logout"
 };
-const fullName = "Mira Rao"; // Populate from the authenticated user session.
-document.getElementById("profile-name").textContent = fullName;
-document.getElementById("initials").textContent = fullName.split(/\\s+/).filter(Boolean).slice(0,2).map(s=>s[0].toUpperCase()).join("") || "ST";
+fetch("/api/auth/me", { credentials: "same-origin" })
+  .then(response => {
+    if (!response.ok) throw new Error("Your sign-in session has expired.");
+    return response.json();
+  })
+  .then(student => {
+    const fullName = String(student.name || "Student").trim() || "Student";
+    document.getElementById("profile-name").textContent = fullName;
+    document.getElementById("initials").textContent = fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "ST";
+  })
+  .catch(() => { window.location.href = "/index.html"; });
 
 const searchInput = document.getElementById("search");
 const cards = [...document.querySelectorAll(".scholarship")];
@@ -40,7 +48,9 @@ document.getElementById("cards").addEventListener("click", async e => {
   button.textContent = saved ? "Save" : "Saved";
   // Connect POST/DELETE to API_ENDPOINTS.save using the real scholarship ID.
 });
-document.getElementById("logout").addEventListener("click", () => {
-  if (confirm("Do you want to log out?")) location.href = API_ENDPOINTS.logout;
+document.getElementById("logout").addEventListener("click", async () => {
+  if (!confirm("Do you want to log out?")) return;
+  const response = await fetch(API_ENDPOINTS.logout, { method: "POST", credentials: "same-origin" });
+  if (response.ok) location.href = "/index.html";
 });
 filterCards("");

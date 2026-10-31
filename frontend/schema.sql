@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS students (
   is_orphan BOOLEAN,
   parent_occupation TEXT,
   receives_other_scholarship BOOLEAN,
+  father_name TEXT,
+  mother_name TEXT,
+  mobile_number TEXT,
+  district TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -40,21 +44,10 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS has_disability BOOLEAN;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS is_orphan BOOLEAN;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_occupation TEXT;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS receives_other_scholarship BOOLEAN;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS father_name TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS mother_name TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS mobile_number TEXT;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS district TEXT;
 
--- File contents are stored outside public/; Neon holds private file metadata.
-CREATE TABLE IF NOT EXISTS student_documents (
-  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-  document_type TEXT NOT NULL CHECK (document_type IN (
-    'aadhaar_card', 'apaar_id', 'marksheet_10', 'marksheet_12',
-    'income_certificate', 'domicile_certificate', 'institution_certificate',
-    'category_certificate', 'bank_passbook'
-  )),
-  original_name TEXT NOT NULL,
-  storage_key TEXT NOT NULL UNIQUE,
-  mime_type TEXT NOT NULL CHECK (mime_type IN ('application/pdf', 'image/jpeg', 'image/png')),
-  file_size BIGINT NOT NULL CHECK (file_size > 0 AND file_size <= 10485760),
-  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS student_documents_student_id_idx ON student_documents(student_id);
+-- Student document files and their file names are not stored in Neon.
+-- They stay in the student's local Scholar Assist Chrome extension storage.
