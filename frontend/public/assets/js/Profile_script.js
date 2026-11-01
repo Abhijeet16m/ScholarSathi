@@ -32,7 +32,7 @@ function updateStudentIdentity(student) {
   document.getElementById("avatar-initials").textContent = initials;
   document.getElementById("sidebar-initials").textContent = initials;
   form.elements.namedItem("name").value = fullName;
-  form.elements.namedItem("email").value = student.email || "";
+  form.elements.namedItem("email").value = student.email || student.profile?.email || "";
 }
 
 function fillForm(profile) {
@@ -43,7 +43,7 @@ function fillForm(profile) {
     if (fieldName === "has_disability" || fieldName === "is_orphan" || fieldName === "receives_other_scholarship") {
       field.value = value === "Yes" ? "true" : value === "No" ? "false" : "";
     } else {
-      field.value = value == null ? "" : String(value);
+      field.value = value == null ? "" : fieldName === "date_of_birth" ? String(value).slice(0, 10) : String(value);
     }
   }
 }
