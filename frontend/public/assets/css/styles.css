@@ -4833,3 +4833,17 @@ body:has(#view-workspace) .view-btn { height: 42px; font-size: 12px; }
     .application-add-fields { grid-template-columns: 1fr; }
     .application-add-form { padding: 16px; }
 }
+
+/* Older dashboard rules positioned every .sidebar as a fixed overlay.
+   Restore normal page flow on the other student workspace pages. */
+@media (min-width: 761px) {
+    body.page-documents .app-shell > .sidebar,
+    body.page-applications .app-shell > .sidebar,
+    body.page-profile .app-shell > .sidebar {
+        position: relative;
+        inset: auto;
+        z-index: auto;
+        height: auto;
+        min-height: 100vh;
+    }
+}
