@@ -1,0 +1,101 @@
+.dashboard-content {
+  width: min(1120px, calc(100% - 48px));
+  margin: 42px auto 64px;
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border-radius: 22px;
+  background: linear-gradient(120deg, #e3f3ee, #f7fbf9 72%);
+  border: 1px solid #d8e8e2;
+}
+
+.hero-card h2 { max-width: 650px; margin: 0 0 10px; font-size: clamp(24px, 3vw, 34px); }
+.hero-card p, .opportunities-intro { color: #667a7d; line-height: 1.6; }
+.hero-card p { margin: 0 0 20px; }
+.hero-eyebrow { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 11px;
+  background: #0b8f7a;
+  color: #fff;
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+.primary-button:hover { background: #087866; }
+.primary-button:disabled { opacity: .55; cursor: not-allowed; }
+.dashboard-opportunities { margin-top: 42px; }
+.dashboard-opportunities h2, .overview-section h2 { margin: 0 0 8px; font-size: 24px; }
+.dashboard-opportunities .eyebrow, .overview-section > .eyebrow { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.opportunities-intro { margin: 0 0 20px; }
+.dashboard-opportunity-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.dashboard-scholarship-card { min-height: 0; padding: 21px; border-radius: 16px; }
+.dashboard-scholarship-card .match-pill { align-self: flex-start; margin-bottom: 18px; }
+.dashboard-scholarship-card h3 { font-size: 17px; }
+.dashboard-scholarship-card .provider { line-height: 1.5; }
+.dashboard-scholarship-card .deadline { margin: 18px 0; font-size: 13px; }
+.open-scholarship-button { width: 100%; margin-top: auto; }
+.dashboard-status, .application-feedback { min-height: 20px; color: #427269; font-size: 13px; }
+.dashboard-status.is-error, .application-feedback.is-error { color: #a12b2b; }
+.stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+.stat-card { padding: 20px; background: #fff; border: 1px solid #dfe7e7; border-radius: 15px; }
+.stat-top { display: flex; flex-direction: column; gap: 6px; }
+.stat-number { font-size: 26px; font-weight: 800; }
+.stat-label { color: #667a7d; font-size: 13px; }
+.stat-link { display: inline-block; margin-top: 16px; color: #087f6e; font-size: 13px; font-weight: 700; }
+
+.applications-content { width: min(100% - 48px, 960px); margin: 72px auto 60px; }
+.section-heading { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 20px; }
+.section-heading h2 { font-size: 29px; letter-spacing: -.8px; margin: 0; white-space: nowrap; }
+.section-heading p { margin: 0; color: #71818a; font-size: 13px; line-height: 1.5; }
+.application-feedback { margin: 18px 0 10px; }
+.application-list { display: grid; gap: 16px; }
+.application-card { padding: 24px; }
+.application-top h3 { font-size: 18px; }
+.status-submitted { background: #e2f4ed; color: #08715f; }
+.status-submitted .status-dot { background: #0a927d; }
+.application-progress { display: flex; align-items: center; gap: 26px; margin: 27px 0 22px; }
+.application-stage { display: inline-flex; align-items: center; gap: 8px; color: #71818a; font-size: 13px; white-space: nowrap; }
+.application-stage.is-complete { color: #087d6d; font-weight: 700; }
+.application-stage-marker { width: 17px; height: 17px; flex: 0 0 17px; display: inline-grid; place-items: center; border: 1px solid #cbdad6; border-radius: 50%; background: #fff; color: transparent; font-size: 11px; }
+.application-stage.is-complete .application-stage-marker { border-color: #0a927d; background: #0a927d; color: #fff; }
+.application-stage input { width: 17px; height: 17px; margin: 0; accent-color: #0a927d; cursor: pointer; }
+.application-stage input:focus-visible { outline: 2px solid #14594e; outline-offset: 2px; }
+.application-stage input:checked + .application-stage-marker { border-color: #0a927d; background: #0a927d; color: #fff; }
+.application-stage input:checked + .application-stage-marker::before { content: "✓"; }
+.application-stage.is-checkable { cursor: pointer; }
+.application-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.application-actions .checklist-button { min-height: 44px; }
+.mark-submitted-button { background: #173e37; }
+.mark-submitted-button:hover { background: #0f332c; }
+.application-empty { padding: 24px; border: 1px dashed #c9d8d4; border-radius: 14px; color: #64768a; background: #fff; }
+.application-card-focused { outline: 2px solid #0a927d; outline-offset: 2px; }
+
+@media (max-width: 1000px) {
+  .dashboard-opportunity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-heading { grid-template-columns: auto auto; gap: 10px 16px; }
+  .section-heading p { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .dashboard-content { width: calc(100% - 28px); margin: 24px auto 40px; }
+  .hero-card { padding: 24px 20px; }
+  .dashboard-opportunity-grid, .stats-grid { grid-template-columns: 1fr; }
+  .applications-content { width: calc(100% - 28px); margin: 36px auto; }
+  .section-heading { display: block; }
+  .section-heading h2 { margin: 8px 0; font-size: 25px; white-space: normal; }
+  .application-card { padding: 20px 17px; }
+  .application-top { display: block; }
+  .status { display: inline-flex; margin-top: 14px; }
+  .application-progress { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .application-actions { flex-direction: column; }
+  .application-actions > * { width: 100%; }
+}
