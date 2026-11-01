@@ -482,7 +482,8 @@ function toClientProfile(student) {
     fullName: student.name || '',
     fatherName: student.father_name || '',
     motherName: student.mother_name || '',
-    dob: student.date_of_birth || '',
+    // PostgreSQL DATE should reach <input type="date"> without a time zone.
+    dob: student.date_of_birth == null ? '' : String(student.date_of_birth).slice(0, 10),
     gender: student.gender || '',
     category: student.category || '',
     state: student.domicile_state || '',
@@ -508,7 +509,7 @@ app.get('/api/auth/me', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ authenticated: false });
   try {
     const result = await pool.query(
-      `SELECT id, name, email, father_name, mother_name, date_of_birth, gender, category,
+      `SELECT id, name, email, father_name, mother_name, date_of_birth::text AS date_of_birth, gender, category,
         domicile_state, district, mobile_number, annual_family_income, qualification_level,
         qualification_marks, course_level, course_name, course_year, entrance_exam_rank,
         institution_name, parent_occupation, has_disability, is_orphan, receives_other_scholarship
@@ -576,7 +577,7 @@ app.post('/api/auth/profile', async (req, res, next) => {
         parent_occupation = $15, receives_other_scholarship = $16, father_name = $17, mother_name = $18,
         mobile_number = $19, district = $20
        WHERE id = $21
-       RETURNING id, name, email, father_name, mother_name, date_of_birth, gender, category,
+       RETURNING id, name, email, father_name, mother_name, date_of_birth::text AS date_of_birth, gender, category,
         domicile_state, district, mobile_number, annual_family_income, qualification_level,
         qualification_marks, course_level, course_name, course_year, entrance_exam_rank,
         institution_name, parent_occupation, has_disability, is_orphan, receives_other_scholarship`,
