@@ -1,5 +1,10 @@
-requests 
+requests
 fastapi
 uvicorn[standard]
 psycopg2-binary
 python-dotenv
+beautifulsoup4
+bs4
+docling
+google-genai
+pydantic>=2,<3
