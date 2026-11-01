@@ -4,3 +4,5 @@ __pycache__/
 .env
 requirements.txt
 backend/tests/
+backend/bugs/
+backend/scholarship_fetching_bugs.txt

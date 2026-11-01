@@ -119,6 +119,65 @@ def find_existing_scholarship(name, provider=None):
     return _with_database_retry(lookup)
 
 
+def find_scholarships_by_pdf_urls(pdf_urls):
+    """Return records that share at least one exact PDF URL with the source card.
+
+    The caller must compare the complete URL sets and handle multiple candidates;
+    a shared PDF alone is not always a unique scholarship identity.
+    """
+    urls = sorted({url.strip() for url in pdf_urls
+                   if isinstance(url, str) and url.strip()})
+    if not urls:
+        return []
+
+    selected_columns = ["id"] + SCHOLARSHIP_COLUMNS + ["updated_at"]
+    query = f"""
+        SELECT {', '.join(selected_columns)}
+        FROM scholarships AS scholarship
+        WHERE EXISTS (
+            SELECT 1
+            FROM jsonb_each_text(
+                CASE
+                    WHEN jsonb_typeof(scholarship.official_pdf_urls) = 'object'
+                    THEN scholarship.official_pdf_urls
+                    ELSE '{{}}'::jsonb
+                END
+            ) AS pdf_entry(label, pdf_url)
+            WHERE pdf_entry.pdf_url = ANY(%s)
+        )
+    """
+
+    def lookup():
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (urls,))
+                rows = cur.fetchall()
+                return [
+                    dict(zip(selected_columns, row))
+                    for row in rows
+                ]
+
+    return _with_database_retry(lookup)
+
+
+def has_scholarship_records():
+    """Return whether the existing table contains any rows."""
+    def lookup():
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT EXISTS (SELECT 1 FROM scholarships)")
+                row = cur.fetchone()
+                return bool(row and row[0])
+
+    return _with_database_retry(lookup)
+
+
+def _require_scholarship_name(value):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("Scholarship name is required")
+    return value.strip()
+
+
 def add_scholarship(data):
     query = """
         INSERT INTO scholarships (
@@ -182,8 +241,7 @@ def add_scholarship(data):
 
     values = {**defaults, **data}
 
-    if not values.get("name"):
-        raise ValueError("Scholarship name is required")
+    values["name"] = _require_scholarship_name(values.get("name"))
 
     if isinstance(values["official_pdf_urls"], (dict, list)):
         values["official_pdf_urls"] = Json(values["official_pdf_urls"])
@@ -196,7 +254,9 @@ def add_scholarship(data):
     return scholarship_id
 
 
-def upsert_scholarship(data, replace_existing=False, existing_id=None):
+def upsert_scholarship(
+    data, replace_existing=False, existing_id=None, update_name=False
+):
     columns = SCHOLARSHIP_COLUMNS
 
     defaults = {
@@ -230,8 +290,7 @@ def upsert_scholarship(data, replace_existing=False, existing_id=None):
 
     values = {**defaults, **data}
 
-    if not values.get("name"):
-        raise ValueError("Scholarship name is required")
+    values["name"] = _require_scholarship_name(values.get("name"))
 
     # Empty collections are treated as missing information.
     for field in columns:
@@ -304,6 +363,12 @@ def upsert_scholarship(data, replace_existing=False, existing_id=None):
             for column in update_fields
         )
         existing_update_condition = update_condition
+
+    if update_name:
+        update_assignments = f"name = %(name)s,\n{update_assignments}"
+        existing_update_condition = (
+            f"({existing_update_condition}) OR name IS DISTINCT FROM %(name)s"
+        )
 
     insert_query = f"""
         INSERT INTO scholarships ({insert_columns}, rules_verified_at, updated_at)

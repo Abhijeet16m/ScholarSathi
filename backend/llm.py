@@ -126,6 +126,38 @@ class ScholarshipData(BaseModel):
         return self
 
 
+class ScholarshipIdentityError(ValueError):
+    """Raised when model output cannot be tied to the supplied listing card."""
+
+
+def _normalized_scholarship_name(value):
+    return " ".join(value.split()).casefold() if isinstance(value, str) else ""
+
+
+def _apply_trusted_scholarship_name(data, listing_data):
+    extracted_name = data.name.strip() if isinstance(data.name, str) else ""
+    card_title = listing_data.get("title") if isinstance(listing_data, dict) else None
+    card_title = card_title.strip() if isinstance(card_title, str) else ""
+
+    if not card_title:
+        if not extracted_name:
+            raise ScholarshipIdentityError(
+                "Scholarship name is missing and no trusted listing-card title is available"
+            )
+        return data
+
+    if (extracted_name
+            and _normalized_scholarship_name(extracted_name)
+            != _normalized_scholarship_name(card_title)):
+        raise ScholarshipIdentityError(
+            "Extracted scholarship name does not match the listing-card title"
+        )
+
+    # Use the exact trusted portal title as the canonical stored name. A missing
+    # model name is safe to fill because the card is the source identity.
+    return data.model_copy(update={"name": card_title})
+
+
 def _is_retryable_gemini_error(error):
     current = error
     visited = set()
@@ -186,14 +218,22 @@ def _gemini_response_schema():
 
 
 def extract_scholarship_info(listing_data, pdf_text):
+    pdf_section = (
+        f"EXTRACTED PDF TEXT:\n{pdf_text}"
+        if isinstance(pdf_text, str) and pdf_text.strip()
+        else (
+            "No PDF text was available. Use only information explicitly present "
+            "in the listing-card data."
+        )
+    )
+
     prompt = f"""
 Extract scholarship information for a scholarship database.
 
 NSP LISTING DATA:
 {json.dumps(listing_data, ensure_ascii=False)}
 
-EXTRACTED PDF TEXT:
-{pdf_text}
+{pdf_section}
 
 Rules:
 - Use both sources to extract information.
@@ -204,6 +244,13 @@ Rules:
 - Distinguish mandatory eligibility conditions from preferences.
 - If rules are conditional or vary by category, do not misrepresent
   them as one universal rule.
+- Read the complete supplied source before deciding whether a rule is absent.
+  Absence from one section is not evidence that the scholarship lacks the rule.
+- Distinguish current rules, dated rules, exceptions, and category-specific
+  conditions. Prefer a later/current rule only when the source says it supersedes
+  the earlier one. If a conflict cannot be resolved, do not choose arbitrarily:
+  set the affected scalar field to null and preserve the conflicting context in
+  the description when it is useful.
 - Return only information supported by the sources.
 """
 
@@ -215,7 +262,8 @@ Rules:
         ),
     )
 
-    return ScholarshipData.model_validate_json(response.text)
+    extracted = ScholarshipData.model_validate_json(response.text)
+    return _apply_trusted_scholarship_name(extracted, listing_data)
 
 
 # Example usage
