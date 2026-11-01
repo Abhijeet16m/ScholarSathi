@@ -98,6 +98,12 @@ function escapeHtml(value) {
 function show(res, title, message, status = 200, href = '/', linkText = 'Return to login') {
   return res.status(status).type('html').send(textPage(title, message, href, linkText, status));
 }
+function saveSessionAndRedirect(req, res, next, location) {
+  req.session.save(error => {
+    if (error) return next(error);
+    return res.redirect(303, location);
+  });
+}
 function otpDigest(code) {
   return crypto.createHmac('sha256', process.env.OTP_SECRET).update(code).digest('hex');
 }
@@ -228,7 +234,7 @@ app.post('/api/auth/registration/request-otp', otpLimiter, async (req, res, next
       lastOtpSentAt: Date.now(),
       verified: false,
     };
-    return res.redirect(303, '/verify-email.html');
+    return saveSessionAndRedirect(req, res, next, '/verify-email.html');
   } catch (error) { next(error); }
 });
 
@@ -245,11 +251,11 @@ app.post('/api/auth/registration/resend-otp', otpLimiter, async (req, res, next)
     registration.otpExpiresAt = Date.now() + 10 * 60 * 1000;
     registration.otpAttempts = 0;
     registration.lastOtpSentAt = Date.now();
-    return res.redirect(303, '/verify-email.html');
+    return saveSessionAndRedirect(req, res, next, '/verify-email.html');
   } catch (error) { next(error); }
 });
 
-app.post('/api/auth/registration/verify-otp', otpLimiter, (req, res) => {
+app.post('/api/auth/registration/verify-otp', otpLimiter, (req, res, next) => {
   const registration = req.session.registration;
   const code = String(req.body.code || '').trim();
   if (!registration) return show(res, 'Start again', 'Your pending registration expired. Please enter your details again.', 400, '/register.html', 'Restart registration');
@@ -267,7 +273,7 @@ app.post('/api/auth/registration/verify-otp', otpLimiter, (req, res) => {
   delete registration.otpHash;
   delete registration.otpExpiresAt;
   delete registration.otpAttempts;
-  return res.redirect(303, '/set-password.html');
+  return saveSessionAndRedirect(req, res, next, '/set-password.html');
 });
 
 function requireVerifiedRegistration(req, res, next) {
@@ -342,7 +348,7 @@ app.post('/api/auth/login', authLimiter, otpLimiter, async (req, res, next) => {
       otpAttempts: 0,
       lastOtpSentAt: Date.now(),
     };
-    return res.redirect(303, '/verify-login.html');
+    return saveSessionAndRedirect(req, res, next, '/verify-login.html');
   } catch (error) { next(error); }
 });
 
@@ -359,7 +365,7 @@ app.post('/api/auth/login/resend-otp', otpLimiter, async (req, res, next) => {
     challenge.otpExpiresAt = Date.now() + 10 * 60 * 1000;
     challenge.otpAttempts = 0;
     challenge.lastOtpSentAt = Date.now();
-    return res.redirect(303, '/verify-login.html');
+    return saveSessionAndRedirect(req, res, next, '/verify-login.html');
   } catch (error) { next(error); }
 });
 
@@ -409,7 +415,7 @@ app.post('/api/auth/password/request-otp', otpLimiter, async (req, res, next) =>
       lastOtpSentAt: Date.now(),
       verified: false,
     };
-    return res.redirect(303, '/verify-reset-email.html');
+    return saveSessionAndRedirect(req, res, next, '/verify-reset-email.html');
   } catch (error) { next(error); }
 });
 
@@ -427,11 +433,11 @@ app.post('/api/auth/password/resend-otp', otpLimiter, async (req, res, next) => 
     challenge.otpAttempts = 0;
     challenge.lastOtpSentAt = Date.now();
     challenge.verified = false;
-    return res.redirect(303, '/verify-reset-email.html');
+    return saveSessionAndRedirect(req, res, next, '/verify-reset-email.html');
   } catch (error) { next(error); }
 });
 
-app.post('/api/auth/password/verify-otp', otpLimiter, (req, res) => {
+app.post('/api/auth/password/verify-otp', otpLimiter, (req, res, next) => {
   const challenge = req.session.passwordResetChallenge;
   const code = String(req.body.code || '').trim();
   if (!challenge) return show(res, 'Start again', 'Your password reset request expired. Enter your email again.', 400, '/forgot-password.html', 'Restart password reset');
@@ -449,7 +455,7 @@ app.post('/api/auth/password/verify-otp', otpLimiter, (req, res) => {
   delete challenge.otpHash;
   delete challenge.otpExpiresAt;
   delete challenge.otpAttempts;
-  return res.redirect(303, '/reset-password.html');
+  return saveSessionAndRedirect(req, res, next, '/reset-password.html');
 });
 
 app.post('/api/auth/password/reset', authLimiter, async (req, res, next) => {
