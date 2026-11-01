@@ -4847,3 +4847,62 @@ body:has(#view-workspace) .view-btn { height: 42px; font-size: 12px; }
         min-height: 100vh;
     }
 }
+
+/* Dashboard's public layout uses a direct body-level sidebar, not .app-shell. */
+@media (min-width: 761px) {
+    body.workspace-sidebar-collapsed:has(#view-workspace) > .sidebar { display: none !important; }
+}
+@media (max-width: 760px) {
+    body:has(#view-workspace) > .sidebar {
+        position: fixed !important;
+        z-index: 1002;
+        inset: 0 auto 0 0;
+        width: min(320px, 86vw) !important;
+        height: 100dvh;
+        min-height: 100dvh !important;
+        overflow-y: auto;
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        box-shadow: 14px 0 40px #09251f30;
+    }
+    body.workspace-menu-open:has(#view-workspace) > .sidebar { transform: translateX(0); }
+    body:has(#view-workspace) > .sidebar .nav-label { display: block; }
+    body:has(#view-workspace) > .sidebar .privacy-note { display: flex; }
+    body:has(#view-workspace) > .sidebar .nav-menu { display: flex; flex-direction: column; overflow: visible; }
+    body:has(#view-workspace) > .sidebar .nav-link { flex: 0 0 auto; white-space: normal; }
+    body:has(#view-workspace) > .sidebar .nav-link svg { display: block; }
+}
+
+/* Put the profile intro in the page header, with readable wrapping. */
+body.page-profile .topbar {
+    height: auto;
+    min-height: 132px;
+    padding-top: 22px;
+    padding-bottom: 22px;
+}
+body.page-profile .topbar-title-group { align-items: flex-start; }
+.profile-page-heading { min-width: 0; max-width: 720px; }
+.profile-page-heading .eyebrow { margin: 0 0 5px; }
+.profile-page-heading h1 { margin: 0 0 6px; font-size: 27px; line-height: 1.2; }
+.profile-page-heading p { margin: 0; max-width: 70ch; color: #71818a; font-size: 12px; line-height: 1.55; }
+body.page-profile .profile-content { margin-top: 30px; }
+#student-avatar img, #avatar-initials img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+@media (max-width: 760px) {
+    body.page-profile .topbar { padding: 16px; }
+    .profile-page-heading h1 { font-size: 23px; }
+    .profile-page-heading p { max-width: 46ch; }
+}
+@media (min-width: 761px) {
+    body.page-dashboard .app-shell > .sidebar {
+        position: relative;
+        inset: auto;
+        z-index: auto;
+        height: auto;
+        min-height: 100vh;
+        width: 264px;
+        flex: 0 0 264px;
+    }
+}
+@media (max-width: 1000px) and (min-width: 761px) {
+    body.page-dashboard .app-shell > .sidebar { width: 232px; flex-basis: 232px; }
+}

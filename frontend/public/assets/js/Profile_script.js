@@ -27,12 +27,14 @@ const formFieldMap = {
 function updateStudentIdentity(student) {
   const fullName = String(student.name || "Student").trim() || "Student";
   const initials = fullName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join("") || "ST";
-  document.getElementById("profile-name").textContent = fullName;
-  document.getElementById("sidebar-name").textContent = fullName;
-  document.getElementById("avatar-initials").textContent = initials;
-  document.getElementById("sidebar-initials").textContent = initials;
-  form.elements.namedItem("name").value = fullName;
-  form.elements.namedItem("email").value = student.email || student.profile?.email || "";
+  for (const [id, value] of [["profile-name", fullName], ["sidebar-name", fullName], ["avatar-initials", initials], ["sidebar-initials", initials]]) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  }
+  const nameField = form?.elements.namedItem("name");
+  const emailField = form?.elements.namedItem("email");
+  if (nameField) nameField.value = fullName;
+  if (emailField) emailField.value = student.email || student.profile?.email || "";
 }
 
 function fillForm(profile) {

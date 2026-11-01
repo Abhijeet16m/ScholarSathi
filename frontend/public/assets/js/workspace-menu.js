@@ -1,5 +1,5 @@
 (() => {
-  const sidebar = document.querySelector(".app-shell > .sidebar");
+  const sidebar = document.querySelector(".app-shell > .sidebar, body > .sidebar");
   const topbar = document.querySelector(".topbar");
   if (!sidebar || !topbar || !topbar.firstElementChild) return;
 

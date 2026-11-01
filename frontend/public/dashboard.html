@@ -14,7 +14,7 @@
     <nav class="nav-menu" aria-label="Main navigation">
       <a class="nav-link active" href="dashboard.html"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a>
       <a class="nav-link" href="documents.html" aria-current="page"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v6h5M8 14l2 2 4-4"/></svg><span>Documents</span></a>
-      <a class="nav-link" href="Application_index.html"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="18" rx="2"/><path d="M9 3.5v4h6v-4M9 12h6M9 16h6"/></svg><span>My Applications</span><span class="nav-badge">2</span></a>
+      <a class="nav-link" href="Application_index.html"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="18" rx="2"/><path d="M9 3.5v4h6v-4M9 12h6M9 16h6"/></svg><span>My Applications</span><span class="nav-badge" id="application-count">0</span></a>
       <a class="nav-link" href="Profile_index.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4"/><path d="M4.5 21v-2.2a7.5 7.5 0 0 1 15 0V21"/></svg><span>My Profile</span></a>
     </nav> 
   </aside>
@@ -66,5 +66,5 @@
 <section class="page-view" id="view-settings"><div class="simple-wrap"><div class="eyebrow">PREFERENCES</div><h2>Settings</h2><div class="panel"><label class="toggle-row"><span>Email deadline reminders</span><input type="checkbox" checked></label><label class="toggle-row"><span>Show saved scholarship updates</span><input type="checkbox" checked></label><p class="muted">Notification delivery requires a backend service and your permission.</p></div></div></section>
 </main>
 <dialog id="eligibility-dialog"><button class="dialog-close" id="dialog-close" aria-label="Close">×</button><div class="eyebrow">EXPLAINABLE ELIGIBILITY</div><h2 id="dialog-title"></h2><div id="dialog-body"></div></dialog>
-<script src="Dashboard.js"></script><script src="/assets/js/workspace-menu.js"></script>
+<script src="/assets/js/extension-bridge.js"></script><script src="/assets/js/Dashboard.js"></script><script src="/assets/js/workspace-menu.js"></script>
 </body></html>
