@@ -16,6 +16,8 @@ const { Pool } = pg;
 const scrypt = promisify(crypto.scrypt);
 const app = express();
 const port = Number(process.env.PORT || 3000);
+const isVercel = process.env.VERCEL === '1';
+const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 
 for (const key of ['DATABASE_URL', 'SESSION_SECRET', 'OTP_SECRET', 'SMTP_USER', 'SMTP_APP_PASSWORD']) {
   if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
@@ -41,8 +43,9 @@ const mailer = nodemailer.createTransport({
     pass: process.env.SMTP_APP_PASSWORD.replace(/\s/g, ''),
   },
 });
-const isProduction = process.env.NODE_ENV === 'production';
 
+// Vercel terminates HTTPS at its edge proxy. Trust that proxy so express-session
+// recognizes the original HTTPS request and reliably sets its secure cookie.
 if (isProduction) app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
@@ -51,12 +54,15 @@ app.use(session({
   store: new PgSession({ pool, createTableIfMissing: true }),
   name: 'scholarsathi.sid',
   secret: process.env.SESSION_SECRET,
+  proxy: isProduction,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'strict',
+    // Lax supports normal form submits followed by same-origin redirects while
+    // still preventing cookies from being sent on cross-site subrequests.
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000,
   },
 }));
@@ -473,7 +479,7 @@ app.post('/api/auth/password/reset', authLimiter, async (req, res, next) => {
 app.post('/api/auth/logout', (req, res, next) => {
   req.session.destroy(error => {
     if (error) return next(error);
-    res.clearCookie('scholarsathi.sid', { httpOnly: true, sameSite: 'strict', secure: isProduction });
+    res.clearCookie('scholarsathi.sid', { httpOnly: true, sameSite: 'lax', secure: isProduction });
     return res.redirect(303, '/');
   });
 });
