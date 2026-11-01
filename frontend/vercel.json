@@ -3,10 +3,7 @@
   "framework": "express",
   "functions": {
     "server.js": {
-      "includeFiles": [
-        "private-pages/**",
-        "public/**"
-      ]
+      "includeFiles": "{private-pages/**,public/**}"
     }
   }
 }
