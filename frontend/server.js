@@ -73,7 +73,10 @@ const protectedPages = new Map([
 ]);
 app.get([...protectedPages.keys()], (req, res, next) => {
   if (!req.session.studentId) return res.redirect(303, '/index.html');
-  return res.sendFile(path.join(__dirname, 'private-pages', protectedPages.get(req.path)), error => { if (error) next(error); });
+  const publicPage = path.join(__dirname, 'public', protectedPages.get(req.path));
+  const privatePage = path.join(__dirname, 'private-pages', protectedPages.get(req.path));
+  const pageToServe = existsSync(publicPage) ? publicPage : privatePage;
+  return res.sendFile(pageToServe, error => { if (error) next(error); });
 });
 app.use(express.static(publicRoot, { index: 'index.html' }));
 
@@ -528,18 +531,23 @@ app.get('/api/auth/me', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-// Keep the FastAPI credential on the server. The browser calls this same-origin
-// endpoint, and Express supplies the signed-in student's id to the internal API.
+// Keep the internal FastAPI credential on the server. Browser pages call this
+// same-origin route; the Express session supplies the student identity.
 app.get('/api/scholarships/matches', async (req, res) => {
-  res.set('Cache-Control', 'private, no-store');
-  if (!req.session.studentId) {
-    return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+
+  const configuredBaseUrl = String(process.env.FASTAPI_BASE_URL || '').trim();
+  const internalApiKey = String(process.env.INTERNAL_API_KEY || '');
+  if (!configuredBaseUrl || !internalApiKey) {
+    return res.status(503).json({ error: 'Scholarship matching is not configured on the server.' });
   }
 
-  const baseUrl = String(process.env.FASTAPI_BASE_URL || '').trim().replace(/\/+$/, '');
-  const internalApiKey = process.env.INTERNAL_API_KEY;
-  if (!baseUrl || !internalApiKey) {
-    return res.status(503).json({ error: 'Scholarship matching is not configured on the server.' });
+  let baseUrl;
+  try {
+    baseUrl = new URL(configuredBaseUrl);
+    if (!['https:', 'http:'].includes(baseUrl.protocol)) throw new Error('Unsupported protocol');
+  } catch {
+    return res.status(503).json({ error: 'The scholarship service URL is invalid.' });
   }
 
   try {
@@ -547,31 +555,19 @@ app.get('/api/scholarships/matches', async (req, res) => {
       `/api/students/${encodeURIComponent(req.session.studentId)}/scholarship-matches`,
       baseUrl,
     );
-    if (!['http:', 'https:'].includes(endpoint.protocol)) {
-      return res.status(503).json({ error: 'Scholarship matching has an invalid server URL.' });
-    }
-
     const upstream = await fetch(endpoint, {
-      method: 'GET',
-      cache: 'no-store',
-      headers: {
-        Accept: 'application/json',
-        'X-Internal-Api-Key': internalApiKey,
-      },
-      signal: AbortSignal.timeout(15000),
+      headers: { Accept: 'application/json', 'X-Internal-Api-Key': internalApiKey },
+      signal: AbortSignal.timeout(5000),
     });
-    const payload = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
-      console.error('Scholarship API returned HTTP', upstream.status);
-      return res.status(502).json({ error: 'The scholarship matching service could not return results.' });
-    }
-    if (!Array.isArray(payload.matches)) {
-      return res.status(502).json({ error: 'The scholarship matching service returned an invalid response.' });
+    const payload = await upstream.json().catch(() => null);
+    if (!upstream.ok || !payload || !Array.isArray(payload.matches)) {
+      console.error('Scholarship matching service returned an unsuccessful response:', upstream.status);
+      return res.status(502).json({ error: 'Could not load live scholarship matches. Please try again shortly.' });
     }
     return res.json({ matches: payload.matches });
   } catch (error) {
-    console.error('Scholarship API request failed:', error.name || 'Error');
-    return res.status(502).json({ error: 'The scholarship matching service is unavailable right now.' });
+    console.error('Scholarship matching service request failed:', error.message);
+    return res.status(502).json({ error: 'Could not reach the live scholarship service. Please try again shortly.' });
   }
 });
 

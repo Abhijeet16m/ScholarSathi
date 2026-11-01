@@ -41,7 +41,7 @@
         <h3>Track a scholarship</h3>
         <p>Enter the scholarship details from its official listing. Your tracker is saved to your signed-in account.</p>
         <div class="application-add-fields">
-          <label>Scholarship name<input name="scholarshipName" type="text" maxlength="200" required placeholder="Name shown on the official scholarship page"></label>
+          <label>Scholarship name<input name="scholarshipName" type="text" list="known-scholarships" maxlength="200" required placeholder="Choose a live scholarship match or enter its official name"><datalist id="known-scholarships"></datalist></label>
           <label>Tracker key<input name="scholarshipKey" type="text" maxlength="120" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,119}" required placeholder="Example: state-merit-2026"></label>
           <button class="primary-button" type="submit">Add to tracker</button>
         </div>
