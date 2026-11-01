@@ -528,6 +528,53 @@ app.get('/api/auth/me', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Keep the FastAPI credential on the server. The browser calls this same-origin
+// endpoint, and Express supplies the signed-in student's id to the internal API.
+app.get('/api/scholarships/matches', async (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
+  if (!req.session.studentId) {
+    return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  }
+
+  const baseUrl = String(process.env.FASTAPI_BASE_URL || '').trim().replace(/\/+$/, '');
+  const internalApiKey = process.env.INTERNAL_API_KEY;
+  if (!baseUrl || !internalApiKey) {
+    return res.status(503).json({ error: 'Scholarship matching is not configured on the server.' });
+  }
+
+  try {
+    const endpoint = new URL(
+      `/api/students/${encodeURIComponent(req.session.studentId)}/scholarship-matches`,
+      baseUrl,
+    );
+    if (!['http:', 'https:'].includes(endpoint.protocol)) {
+      return res.status(503).json({ error: 'Scholarship matching has an invalid server URL.' });
+    }
+
+    const upstream = await fetch(endpoint, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+        'X-Internal-Api-Key': internalApiKey,
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    const payload = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      console.error('Scholarship API returned HTTP', upstream.status);
+      return res.status(502).json({ error: 'The scholarship matching service could not return results.' });
+    }
+    if (!Array.isArray(payload.matches)) {
+      return res.status(502).json({ error: 'The scholarship matching service returned an invalid response.' });
+    }
+    return res.json({ matches: payload.matches });
+  } catch (error) {
+    console.error('Scholarship API request failed:', error.name || 'Error');
+    return res.status(502).json({ error: 'The scholarship matching service is unavailable right now.' });
+  }
+});
+
 function toClientApplication(application) {
   return {
     scholarshipKey: application.scholarship_key,
