@@ -1,0 +1,84 @@
+ScholarSathi frontend data and API review
+========================================
+
+Scope: all frontend HTML/JavaScript files, Express routes, frontend docs/config, and the supplied database structure. The active signed-in pages are served from frontend/private-pages by frontend/server.js; same-named public pages are shadowed by those routes. No source files were changed for this review.
+
+Dashboard and Discover
+----------------------
+
+1. Stale privacy statement and demo avatar fallback
+   - Location: frontend/private-pages/dashboard.html:55, 66-69 (the duplicate public dashboard is frontend/public/dashboard.html); frontend/public/assets/js/student-dashboard.js:199-207.
+   - Current data: copy says profile details stay in this browser demo; the HTML initially shows MR/Student until the script loads. The server stores profile fields in PostgreSQL and student-dashboard.js replaces the name/avatar using /api/auth/me.
+   - Backend replacement: existing GET /api/auth/me provides the signed-in name/profile. The copy is static product text, not API data.
+   - API status: profile endpoint exists and is used; no endpoint is needed. The copy should be corrected and the initial avatar treated as a temporary fallback.
+   - Priority: Medium (privacy wording is misleading); Low (avatar flash).
+
+2. Duplicate application-count request and silent failure
+   - Location: frontend/private-pages/dashboard.html:123; frontend/public/assets/js/student-dashboard.js:187-193; frontend/public/assets/js/workspace-menu.js:52-59. The same duplicate occurs on the Applications page: frontend/private-pages/Application_index.html:62, frontend/public/assets/js/Application_script.js:164, and workspace-menu.js:52-59.
+   - Current data: both page scripts and workspace-menu.js independently GET /api/applications to populate page data and the navigation badge. workspace-menu.js silently ignores failures, leaving its initial 0 badge.
+   - Backend replacement: existing authenticated GET /api/applications returns the user's applications; no new endpoint is needed. The page response can supply the badge, or one shared request/cache can serve both uses.
+   - API status: present and used, but fetched redundantly on Dashboard and Applications; badge errors are not surfaced.
+   - Priority: Medium (duplicate calls and a potentially misleading zero).
+
+3. Scholarship match response is mostly used; some counts are not displayed
+   - Location: frontend/public/assets/js/student-dashboard.js:57-99, 187-189, 243-247.
+   - Current data: card name, provider, scheme status, amount, deadline, URL, eligibility status, matched/applicable counts, and failed/verification reason arrays are filled from GET /api/scholarships/matches. Numeric failed_conditions, unknown_conditions, and ignored_conditions are not displayed. The dashboard total counts only Eligible; individual cards still show ineligible/verification results.
+   - Backend replacement: existing Express route proxies the FastAPI match results and adds scholarship details; its response supplies these values. No endpoint is needed to display the unused counts.
+   - API status: working data path exists; the unused counts are optional presentation data, not missing integration.
+   - Priority: Low.
+
+Applications tracker
+--------------------
+
+4. Scholarship name/key are manually entered
+   - Location: frontend/private-pages/Application_index.html:45-51 and frontend/public/assets/js/Application_script.js:178-198.
+   - Current data: a user types a scholarship name and arbitrary tracker key. Dashboard-created entries instead derive the key as scheme-{scholarship_id} in student-dashboard.js:113-124.
+   - Backend replacement: POST /api/applications accepts the name/key; GET /api/scholarships/matches provides evaluated scholarship IDs/names. There is no general scholarship-catalog endpoint in Express. If the manual form should only select known database schemes, a catalog endpoint (or a selector sourced from the match response) is needed; otherwise manual entry is the current supported behavior.
+   - API status: tracker APIs exist; no general catalog/list API was found.
+   - Priority: Low (Medium if catalog-only tracking is a product requirement).
+
+5. Application timestamps returned but unused
+   - Location: frontend/server.js:585-593 and frontend/public/assets/js/Application_script.js:65-115, 143-158.
+   - Current data: application responses include interestedAt, submittedAt, and updatedAt, but cards display only the name, In progress/Submitted, and the three fixed stages.
+   - Backend replacement: existing GET/PATCH/POST application routes already return these timestamps. The UI could use them for an activity/date summary without new endpoints.
+   - API status: response data is available but not consumed. Submission status is intentionally student-recorded; README.md:31 says the provider portal is not integrated.
+   - Priority: Low.
+
+Profile and registration
+-----------------------
+
+6. Profile choice lists and domicile options are static
+   - Location: frontend/public/register.html:32-46; frontend/private-pages/Profile_index.html:45-70 (duplicate public profile page: frontend/public/Profile_index.html); validation lists are repeated in frontend/server.js:199-202 and 698-701.
+   - Current data: gender, social category, qualification/course level, boolean labels, and Indian state/UT options are embedded in HTML. Registration uses a state/UT select; profile editing uses a free-text state field. Express validates the other enumerations against duplicated arrays, but only requires domicile_state to be nonempty and at most 100 characters.
+   - Backend replacement: GET/POST /api/auth/me and /api/auth/profile handle a student's saved values, but no reference-data/lookup endpoint exists and the database stores these values as text. Centralizing changing options would require a new lookup source/API and shared validation; no such reference table was found.
+   - API status: profile APIs exist; lookup API does not. Static controlled vocabularies are reasonable if these choices are product constants. State options and profile edit behavior can currently diverge.
+   - Priority: Low (Medium if the state list or eligibility vocabularies must be centrally managed).
+
+Documents
+---------
+
+7. Checklist catalogue and saved-document state are extension-local
+   - Location: frontend/private-pages/documents.html:41-52 and frontend/public/set-password.html:10-22; frontend/public/assets/js/documents.js:35-47, 142-170; registration-finish.js:6-33.
+   - Current data: 12 document types and labels are hardcoded. Saved names/files/readiness are read from Scholar Assist extension storage via LIST_DOCUMENTS and related extension messages, not from Express. The displayed 12 is updated from the HTML options when documents.js initializes.
+   - Backend replacement: no document API route was found. The current README.md:69 and remove-legacy-document-metadata.sql:3 describe extension-only storage and removal of an old student_documents metadata table. The supplied database structure includes student_documents, so database ownership and the documented privacy design conflict. If that table is now intended as the source of checklist metadata/status, a per-session document API is missing; file bytes are still not sent by this frontend.
+   - API status: no backend document API; current extension integration is deliberate and functional by design. Confirm whether student_documents is legacy or authoritative before moving metadata to the server.
+   - Priority: Medium (resolve the database/privacy ownership mismatch); Low (catalogue is stable and can remain static).
+
+Deadline alerts, notifications, and Privacy Center
+-------------------------------------------------
+
+8. Navigation destinations and data feeds are missing
+   - Location: frontend/server.js:74-86 maps /Deadline_index.html and /Privacy_index.html to private files; corresponding files do not exist in frontend/private-pages or frontend/public. Links appear in multiple private pages, e.g. dashboard.html:41-47 and Discover_index.html:23-24.
+   - Current data: no deadline-alert/notification list is rendered; no Privacy Center page exists. The match cards show each scholarship's deadline, but there is no alert feed or change history.
+   - Backend replacement: no Express routes for monitored_sources, monitoring_jobs, or scholarship_change_logs were found. GET /api/scholarships/matches is the only relevant existing feed and does not expose monitoring jobs/change logs. If alert/change notifications are intended, they need page destinations and authenticated read APIs backed by those tables. Privacy policy copy need not be database-driven.
+   - API status: missing routes and page files; not a case of unused existing response data.
+   - Priority: Medium (the advertised navigation routes have no page targets; alerts need a new API if required).
+
+Static content that is fine to keep hardcoded
+--------------------------------------------
+
+- Auth instructions, OTP/password placeholders, example input values, labels, icons, loading/empty text, and branding are copy or transient fallbacks, not user or scholarship records.
+- Scholarship card content and eligibility are already populated from GET /api/scholarships/matches; profile fields are loaded/saved through /api/auth/me and /api/auth/profile; applications are loaded/updated through /api/applications.
+- The application stages (Interested, Documents, Submitted) describe the current manual workflow and are not provider-side application statuses.
+- The document-type list and files can remain in the extension under the documented privacy model. Do not treat the legacy student_documents table as the frontend source until its status is clarified.
+- Public copies of Dashboard, Profile, Applications, and Documents duplicate private-page HTML, but Express serves the protected private versions for those routes. Keep any future data-binding review focused on the private-page versions to avoid maintaining two apparent sources.

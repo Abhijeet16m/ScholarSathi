@@ -1,5 +1,9 @@
 const list = document.getElementById("applications-list");
 const feedback = document.getElementById("application-feedback");
+const addForm = document.getElementById("application-add-form");
+const scholarshipNameInput = addForm?.elements.namedItem("scholarshipName");
+const scholarshipKeyInput = addForm?.elements.namedItem("scholarshipKey");
+const scholarshipOptions = document.getElementById("known-scholarships");
 const focusKey = new URLSearchParams(window.location.search).get("scholarship");
 
 function setStudentName(name) {
@@ -14,6 +18,14 @@ function setStudentName(name) {
 function setFeedback(message, isError = false) {
   feedback.textContent = message;
   feedback.classList.toggle("is-error", isError);
+}
+
+function setApplicationCountUnavailable() {
+  const badge = document.getElementById("application-count");
+  if (!badge) return;
+  badge.textContent = "—";
+  badge.title = "Application count is unavailable.";
+  badge.setAttribute("aria-label", "Application count unavailable");
 }
 
 async function requestJson(url, options = {}) {
@@ -69,7 +81,14 @@ function renderApplication(application) {
   title.textContent = application.scholarshipName;
   const subtitle = document.createElement("p");
   subtitle.className = "subtitle";
-  subtitle.textContent = application.submitted ? "Application submitted" : "Application in progress";
+  const activityDate = application.submittedAt || application.updatedAt || application.interestedAt;
+  const parsedActivityDate = activityDate ? new Date(activityDate) : null;
+  const activityLabel = parsedActivityDate && !Number.isNaN(parsedActivityDate.getTime())
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(parsedActivityDate)
+    : "";
+  subtitle.textContent = application.submitted
+    ? `Application submitted${activityLabel ? ` on ${activityLabel}` : ""}`
+    : `Application in progress${activityLabel ? ` · Updated ${activityLabel}` : ""}`;
   titleWrap.append(title, subtitle);
 
   const status = document.createElement("span");
@@ -165,6 +184,39 @@ async function loadApplications() {
   return result.applications;
 }
 
+async function loadScholarshipOptions() {
+  if (!scholarshipOptions) return;
+  const result = await requestJson("/api/scholarships/matches");
+  if (!Array.isArray(result.matches)) throw new Error("The scholarship endpoint returned an unexpected response.");
+
+  scholarshipOptions.replaceChildren();
+  for (const match of result.matches) {
+    if (match?.scholarship_id == null || !match.scholarship_name) continue;
+    const option = document.createElement("option");
+    option.value = match.provider
+      ? `${match.scholarship_name} — ${match.provider}`
+      : match.scholarship_name;
+    option.dataset.scholarshipName = match.scholarship_name;
+    option.dataset.scholarshipKey = `scheme-${match.scholarship_id}`;
+    scholarshipOptions.append(option);
+  }
+}
+
+scholarshipNameInput?.addEventListener("input", () => {
+  const option = [...(scholarshipOptions?.options || [])]
+    .find(candidate => candidate.value === scholarshipNameInput.value);
+  if (option) {
+    scholarshipKeyInput.value = option.dataset.scholarshipKey;
+    scholarshipKeyInput.dataset.autofilled = "true";
+  } else if (scholarshipKeyInput?.dataset.autofilled === "true") {
+    scholarshipKeyInput.value = "";
+    delete scholarshipKeyInput.dataset.autofilled;
+  }
+});
+scholarshipKeyInput?.addEventListener("input", () => {
+  delete scholarshipKeyInput.dataset.autofilled;
+});
+
 document.getElementById("logout-button").addEventListener("click", async () => {
   if (!window.confirm("Do you want to log out?")) return;
   try {
@@ -175,18 +227,20 @@ document.getElementById("logout-button").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("application-add-form").addEventListener("submit", async event => {
+addForm.addEventListener("submit", async event => {
   event.preventDefault();
   const form = event.currentTarget;
   const submit = form.querySelector('button[type="submit"]');
   const values = new FormData(form);
   submit.disabled = true;
   try {
+    const selectedScholarship = [...(scholarshipOptions?.options || [])]
+      .find(option => option.value === String(values.get("scholarshipName") || ""));
     await requestJson("/api/applications", {
       method: "POST",
       body: JSON.stringify({
-        scholarshipName: String(values.get("scholarshipName") || "").trim(),
-        scholarshipKey: String(values.get("scholarshipKey") || "").trim().toLowerCase(),
+        scholarshipName: String(selectedScholarship?.dataset.scholarshipName || values.get("scholarshipName") || "").trim(),
+        scholarshipKey: String(selectedScholarship?.dataset.scholarshipKey || values.get("scholarshipKey") || "").trim().toLowerCase(),
       }),
     });
     form.reset();
@@ -201,11 +255,20 @@ document.getElementById("application-add-form").addEventListener("submit", async
 
 async function initialize() {
   try {
-    const student = await requestJson("/api/auth/me");
+    const [student, applications] = await Promise.all([
+      requestJson("/api/auth/me"),
+      loadApplications(),
+    ]);
     setStudentName(student.name || student.profile?.fullName);
-    renderApplications(await loadApplications());
+    renderApplications(applications);
+    void loadScholarshipOptions().catch(error => {
+      setFeedback(`Known scholarship suggestions are unavailable; manual tracking still works. ${error.message}`, true);
+    });
   } catch (error) {
-    if (error.message !== "Your sign-in session has expired.") setFeedback(error.message, true);
+    if (error.message !== "Your sign-in session has expired.") {
+      setApplicationCountUnavailable();
+      setFeedback(error.message, true);
+    }
   }
 }
 

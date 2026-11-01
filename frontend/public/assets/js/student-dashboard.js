@@ -5,11 +5,26 @@
   const search = document.getElementById("match-search");
   let matches = [];
   let trackedKeys = new Set();
+  let applicationsAvailable = false;
 
   const setText = (id, value) => {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
   };
+
+  function setApplicationCount(value) {
+    const badge = document.getElementById("application-count");
+    if (!badge) return;
+    badge.textContent = value;
+    if (value === "Unavailable") {
+      badge.textContent = "—";
+      badge.title = "Application count is unavailable.";
+      badge.setAttribute("aria-label", "Application count unavailable");
+    } else {
+      badge.removeAttribute("title");
+      badge.removeAttribute("aria-label");
+    }
+  }
 
   async function requestJson(url, options = {}) {
     const response = await fetch(url, {
@@ -125,9 +140,12 @@
         });
         trackedKeys.add(key);
         track.textContent = "In my applications";
-        setText("application-progress-count", String(trackedKeys.size));
-        const badge = document.getElementById("application-count");
-        if (badge) badge.textContent = String(trackedKeys.size);
+        if (applicationsAvailable) {
+          setText("application-progress-count", String(trackedKeys.size));
+          setApplicationCount(String(trackedKeys.size));
+        } else {
+          setApplicationCount("Unavailable");
+        }
         showFeedback("Scholarship added to your application tracker.");
       } catch (error) {
         track.disabled = false;
@@ -184,8 +202,24 @@
   }
 
   async function initialize() {
+    const identityRequest = requestJson("/api/auth/me");
+    const matchesRequest = requestJson("/api/scholarships/matches");
+    const applicationsRequest = requestJson("/api/applications");
+    const [identityResult, matchesResult, applicationsResult] = await Promise.allSettled([
+      identityRequest,
+      matchesRequest,
+      applicationsRequest,
+    ]);
+
+    if (identityResult.status === "rejected") {
+      if (identityResult.reason.message !== "Your sign-in session has expired.") {
+        showFeedback(identityResult.reason.message || "Could not load your account details.", true);
+      }
+      return;
+    }
+
     try {
-      const student = await requestJson("/api/auth/me");
+      const student = identityResult.value;
       const name = student.name || student.profile?.fullName || "Student";
       setText("greeting-name", name);
       setText("profile-name", name);
@@ -193,28 +227,48 @@
       setText("avatar-initials", initials(name));
       setText("sidebar-initials", initials(name));
 
-      const [matchResult, applicationResult] = await Promise.all([
-        requestJson("/api/scholarships/matches"),
-        requestJson("/api/applications"),
-      ]);
-      matches = Array.isArray(matchResult.matches) ? matchResult.matches : [];
-      trackedKeys = new Set((applicationResult.applications || []).map(application => application.scholarshipKey));
-      const eligible = matches.filter(match => match.eligibility_status === "Eligible").length;
-      setText("scholarship-match-count", String(eligible));
-      setText("application-progress-count", String(trackedKeys.size));
-      setText("application-count", String(trackedKeys.size));
-      renderMatches();
-      await loadLocalDocumentReadiness();
-    } catch (error) {
-      if (error.message !== "Your sign-in session has expired.") {
+      const matchesAvailable = matchesResult.status === "fulfilled"
+        && Array.isArray(matchesResult.value.matches)
+        && matchesResult.value.matches.every(match => match && typeof match === "object");
+      if (matchesAvailable) {
+        matches = matchesResult.value.matches;
+      } else {
+        const error = matchesResult.status === "rejected"
+          ? matchesResult.reason
+          : new Error("The server returned an invalid scholarship response.");
         if (grid) {
           const message = document.createElement("p");
           message.className = "panel match-empty is-error";
-          message.textContent = error.message || "Could not load scholarship data.";
+          message.textContent = error.message || "Could not load scholarship matches.";
           grid.replaceChildren(message);
         }
         if (count) count.textContent = "Unable to load matches";
       }
+
+      if (applicationsResult.status === "fulfilled"
+          && Array.isArray(applicationsResult.value.applications)
+          && applicationsResult.value.applications.every(application => application && typeof application === "object")) {
+        applicationsAvailable = true;
+        trackedKeys = new Set(applicationsResult.value.applications
+          .map(application => application.scholarshipKey)
+          .filter(key => typeof key === "string"));
+        setText("application-progress-count", String(trackedKeys.size));
+        setApplicationCount(String(trackedKeys.size));
+      } else {
+        const error = applicationsResult.status === "rejected"
+          ? applicationsResult.reason
+          : new Error("The server returned an invalid application response.");
+        showFeedback(error.message || "Could not load your application tracker.", true);
+        setText("application-progress-count", "Unavailable");
+        setApplicationCount("Unavailable");
+      }
+
+      const eligible = matches.filter(match => match.eligibility_status === "Eligible").length;
+      setText("scholarship-match-count", String(eligible));
+      if (matchesAvailable) renderMatches();
+      void loadLocalDocumentReadiness();
+    } catch (error) {
+      showFeedback(error.message || "Could not load scholarship data.", true);
     }
   }
 
