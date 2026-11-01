@@ -26,7 +26,7 @@
           <svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v6h5"/></svg>
           <span>Documents</span>
         </a>
-        <a class="nav-link" href="/Discover_index.html">
+          <a class="nav-link" href="Discover_index.html">
           <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
           <span>Discover Scholarships</span>
         </a>
@@ -52,7 +52,7 @@
         <span class="privacy-lock" aria-hidden="true">
           <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>
         </span>
-        <div><strong>Your data, your choice</strong><p>Profile details are saved to your ScholarSathi account. Documents stay in this Chrome profile.</p></div>
+        <div><strong>Your data, your choice</strong><p>Profile details stay in this browser demo.</p></div>
       </div>
     </aside>
 
@@ -64,7 +64,7 @@
         </div>
         <div class="user-actions">
           <a class="profile-summary" href="Profile_index.html" aria-label="Open profile">
-            <span class="avatar" id="avatar-initials">ST</span>
+            <span class="avatar" id="avatar-initials">MR</span>
             <span class="profile-name" id="profile-name">Student</span>
           </a>
           <button class="logout-button" id="logout-button" type="button" aria-label="Log out" title="Log out">
@@ -78,8 +78,8 @@
           <div class="hero-decoration" aria-hidden="true"></div>
           <div class="eyebrow hero-eyebrow">Personalized for you</div>
           <h2>Your next opportunity may be closer than you think.</h2>
-          <p>See scholarship opportunities matched against the details in your student profile.</p>
-          <a class="primary-button" href="/Discover_index.html">Explore matches <span aria-hidden="true">›</span></a>
+          <p>Build your local student profile to see explainable scholarship matches.</p>
+          <a class="primary-button" href="Discover_index.html">Explore matches <span aria-hidden="true">›</span></a>
         </section>
 
         <section class="overview-section" aria-labelledby="journey-title">
@@ -87,40 +87,24 @@
           <h2 id="journey-title">Your scholarship journey</h2>
           <div class="stats-grid">
             <article class="stat-card">
-              <div class="stat-top"><strong class="stat-number" id="scholarship-match-count">—</strong><span class="stat-label">Eligible by criteria</span></div>
-              <a class="stat-link" href="/Discover_index.html">View matches <span aria-hidden="true">›</span></a>
+              <div class="stat-top"><strong class="stat-number">3</strong><span class="stat-label">Good matches</span></div>
+              <a class="stat-link" href="Discover_index.html">View matches <span aria-hidden="true">›</span></a>
             </article>
             <article class="stat-card">
-              <div class="stat-top"><strong class="stat-number" id="application-progress-count">—</strong><span class="stat-label">Tracked applications</span></div>
-              <a class="stat-link" href="/Application_index.html">Track applications <span aria-hidden="true">›</span></a>
+              <div class="stat-top"><strong class="stat-number">2</strong><span class="stat-label">Applications in progress</span></div>
+              <a class="stat-link" href="Application_index.html">Track applications <span aria-hidden="true">›</span></a>
             </article>
             <article class="stat-card">
-              <div class="stat-top"><strong class="stat-number" id="document-readiness-count">—</strong><span class="stat-label">Documents saved locally</span></div>
-              <a class="stat-link" href="/documents.html">Complete checklist <span aria-hidden="true">›</span></a>
+              <div class="stat-top"><strong class="stat-number">67%</strong><span class="stat-label">Document readiness</span></div>
+              <a class="stat-link" href="documents.html">Complete checklist <span aria-hidden="true">›</span></a>
             </article>
           </div>
-        </section>
-
-        <section class="scholarship-section" id="scholarship-matches" aria-labelledby="match-heading">
-          <div class="discover-heading">
-            <div><div class="eyebrow">Matched opportunities</div><h2 id="match-heading">Scholarships for your profile</h2></div>
-            <p>Eligibility uses the profile and scholarship criteria currently in the database. Review each scheme's official information before applying.</p>
-          </div>
-          <form class="searchbar" id="match-search-form" role="search">
-            <span class="search-icon" aria-hidden="true">⌕</span>
-            <input id="match-search" type="search" placeholder="Search scholarships or providers" aria-label="Search scholarships or providers">
-            <button class="primary-button search-button" type="submit">Search</button>
-          </form>
-          <div class="results-meta"><span id="match-results-count" aria-live="polite">Loading matches…</span><a href="/Discover_index.html">See all</a></div>
-          <div class="scholarship-grid" id="scholarship-grid" aria-live="polite"><p class="muted">Loading scholarship matches…</p></div>
-          <p class="match-feedback" id="match-feedback" role="status" aria-live="polite"></p>
         </section>
       </div>
     </main>
   </div>
   <script src="assets/js/extension-bridge.js"></script>
-  <script src="/assets/js/student-dashboard.js"></script>
+  <script src="/assets/js/Dashboard.js"></script>
   <script src="/assets/js/workspace-menu.js"></script>
 </body>
 </html>
-

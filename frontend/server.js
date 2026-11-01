@@ -16,12 +16,6 @@ const { Pool } = pg;
 const scrypt = promisify(crypto.scrypt);
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const isVercel = process.env.VERCEL === '1';
-const isProduction = process.env.NODE_ENV === 'production' || isVercel;
-const fastApiBaseUrl = (process.env.FASTAPI_BASE_URL?.trim()
-  || (isVercel ? '' : 'http://127.0.0.1:8000')).replace(/\/+$/, '');
-const internalApiKey = process.env.INTERNAL_API_KEY || '';
-const fastApiTimeoutMs = 5000;
 
 for (const key of ['DATABASE_URL', 'SESSION_SECRET', 'OTP_SECRET', 'SMTP_USER', 'SMTP_APP_PASSWORD']) {
   if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
@@ -47,9 +41,8 @@ const mailer = nodemailer.createTransport({
     pass: process.env.SMTP_APP_PASSWORD.replace(/\s/g, ''),
   },
 });
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Vercel terminates HTTPS at its edge proxy. Trust that proxy so express-session
-// recognizes the original HTTPS request and reliably sets its secure cookie.
 if (isProduction) app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
@@ -58,15 +51,12 @@ app.use(session({
   store: new PgSession({ pool, createTableIfMissing: true }),
   name: 'scholarsathi.sid',
   secret: process.env.SESSION_SECRET,
-  proxy: isProduction,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     secure: isProduction,
-    // Lax supports normal form submits followed by same-origin redirects while
-    // still preventing cookies from being sent on cross-site subrequests.
-    sameSite: 'lax',
+    sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000,
   },
 }));
@@ -91,12 +81,6 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHea
 const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false });
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const cleanEmail = value => String(value || '').trim().toLowerCase();
-const PROFILE_ENUMS = Object.freeze({
-  genders: Object.freeze(['Female', 'Male', 'Other', 'Prefer not to say']),
-  categories: Object.freeze(['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other']),
-  qualifications: Object.freeze(['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other']),
-  courseLevels: Object.freeze(['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other']),
-});
 const textPage = (title, message, href = '/', linkText = 'Return to login', status = 200) => {
   const safeTitle = escapeHtml(title);
   const safeMessage = escapeHtml(message);
@@ -107,12 +91,6 @@ function escapeHtml(value) {
 }
 function show(res, title, message, status = 200, href = '/', linkText = 'Return to login') {
   return res.status(status).type('html').send(textPage(title, message, href, linkText, status));
-}
-function saveSessionAndRedirect(req, res, next, location) {
-  req.session.save(error => {
-    if (error) return next(error);
-    return res.redirect(303, location);
-  });
 }
 function otpDigest(code) {
   return crypto.createHmac('sha256', process.env.OTP_SECRET).update(code).digest('hex');
@@ -209,13 +187,17 @@ app.post('/api/auth/registration/request-otp', otpLimiter, async (req, res, next
       mobile_number: String(req.body.mobile_number || '').trim(),
       district: String(req.body.district || '').trim(),
     };
+    const validGenders = ['Female', 'Male', 'Other', 'Prefer not to say'];
+    const validCategories = ['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other'];
+    const validQualifications = ['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other'];
+    const validCourseLevels = ['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other'];
     const invalidOptionalNumber = [profile.annual_family_income, profile.qualification_marks, profile.course_year, profile.entrance_exam_rank].some(Number.isNaN);
     const invalidBoolean = ['has_disability', 'is_orphan', 'receives_other_scholarship'].some(key => !['', 'true', 'false'].includes(String(req.body[key] || '')));
     if (
       name.length < 2 || name.length > 120 || !emailPattern.test(email) || email.length > 254 ||
-      !validDateOfBirth(profile.date_of_birth) || !PROFILE_ENUMS.genders.includes(profile.gender) || !PROFILE_ENUMS.categories.includes(profile.category) ||
+      !validDateOfBirth(profile.date_of_birth) || !validGenders.includes(profile.gender) || !validCategories.includes(profile.category) ||
       !profile.domicile_state || profile.domicile_state.length > 100 || profile.annual_family_income === null || Number.isNaN(profile.annual_family_income) ||
-      !PROFILE_ENUMS.qualifications.includes(profile.qualification_level) || !PROFILE_ENUMS.courseLevels.includes(profile.course_level) ||
+      !validQualifications.includes(profile.qualification_level) || !validCourseLevels.includes(profile.course_level) ||
       !profile.course_name || profile.course_name.length > 160 || profile.course_year === null || Number.isNaN(profile.course_year) || invalidOptionalNumber ||
       profile.institution_name.length > 200 || profile.parent_occupation.length > 160 ||
       profile.father_name.length > 120 || profile.mother_name.length > 120 || profile.district.length > 100 ||
@@ -240,7 +222,7 @@ app.post('/api/auth/registration/request-otp', otpLimiter, async (req, res, next
       lastOtpSentAt: Date.now(),
       verified: false,
     };
-    return saveSessionAndRedirect(req, res, next, '/verify-email.html');
+    return res.redirect(303, '/verify-email.html');
   } catch (error) { next(error); }
 });
 
@@ -257,11 +239,11 @@ app.post('/api/auth/registration/resend-otp', otpLimiter, async (req, res, next)
     registration.otpExpiresAt = Date.now() + 10 * 60 * 1000;
     registration.otpAttempts = 0;
     registration.lastOtpSentAt = Date.now();
-    return saveSessionAndRedirect(req, res, next, '/verify-email.html');
+    return res.redirect(303, '/verify-email.html');
   } catch (error) { next(error); }
 });
 
-app.post('/api/auth/registration/verify-otp', otpLimiter, (req, res, next) => {
+app.post('/api/auth/registration/verify-otp', otpLimiter, (req, res) => {
   const registration = req.session.registration;
   const code = String(req.body.code || '').trim();
   if (!registration) return show(res, 'Start again', 'Your pending registration expired. Please enter your details again.', 400, '/register.html', 'Restart registration');
@@ -279,7 +261,7 @@ app.post('/api/auth/registration/verify-otp', otpLimiter, (req, res, next) => {
   delete registration.otpHash;
   delete registration.otpExpiresAt;
   delete registration.otpAttempts;
-  return saveSessionAndRedirect(req, res, next, '/set-password.html');
+  return res.redirect(303, '/set-password.html');
 });
 
 function requireVerifiedRegistration(req, res, next) {
@@ -354,7 +336,7 @@ app.post('/api/auth/login', authLimiter, otpLimiter, async (req, res, next) => {
       otpAttempts: 0,
       lastOtpSentAt: Date.now(),
     };
-    return saveSessionAndRedirect(req, res, next, '/verify-login.html');
+    return res.redirect(303, '/verify-login.html');
   } catch (error) { next(error); }
 });
 
@@ -371,7 +353,7 @@ app.post('/api/auth/login/resend-otp', otpLimiter, async (req, res, next) => {
     challenge.otpExpiresAt = Date.now() + 10 * 60 * 1000;
     challenge.otpAttempts = 0;
     challenge.lastOtpSentAt = Date.now();
-    return saveSessionAndRedirect(req, res, next, '/verify-login.html');
+    return res.redirect(303, '/verify-login.html');
   } catch (error) { next(error); }
 });
 
@@ -421,7 +403,7 @@ app.post('/api/auth/password/request-otp', otpLimiter, async (req, res, next) =>
       lastOtpSentAt: Date.now(),
       verified: false,
     };
-    return saveSessionAndRedirect(req, res, next, '/verify-reset-email.html');
+    return res.redirect(303, '/verify-reset-email.html');
   } catch (error) { next(error); }
 });
 
@@ -439,11 +421,11 @@ app.post('/api/auth/password/resend-otp', otpLimiter, async (req, res, next) => 
     challenge.otpAttempts = 0;
     challenge.lastOtpSentAt = Date.now();
     challenge.verified = false;
-    return saveSessionAndRedirect(req, res, next, '/verify-reset-email.html');
+    return res.redirect(303, '/verify-reset-email.html');
   } catch (error) { next(error); }
 });
 
-app.post('/api/auth/password/verify-otp', otpLimiter, (req, res, next) => {
+app.post('/api/auth/password/verify-otp', otpLimiter, (req, res) => {
   const challenge = req.session.passwordResetChallenge;
   const code = String(req.body.code || '').trim();
   if (!challenge) return show(res, 'Start again', 'Your password reset request expired. Enter your email again.', 400, '/forgot-password.html', 'Restart password reset');
@@ -461,7 +443,7 @@ app.post('/api/auth/password/verify-otp', otpLimiter, (req, res, next) => {
   delete challenge.otpHash;
   delete challenge.otpExpiresAt;
   delete challenge.otpAttempts;
-  return saveSessionAndRedirect(req, res, next, '/reset-password.html');
+  return res.redirect(303, '/reset-password.html');
 });
 
 app.post('/api/auth/password/reset', authLimiter, async (req, res, next) => {
@@ -491,7 +473,7 @@ app.post('/api/auth/password/reset', authLimiter, async (req, res, next) => {
 app.post('/api/auth/logout', (req, res, next) => {
   req.session.destroy(error => {
     if (error) return next(error);
-    res.clearCookie('scholarsathi.sid', { httpOnly: true, sameSite: 'lax', secure: isProduction });
+    res.clearCookie('scholarsathi.sid', { httpOnly: true, sameSite: 'strict', secure: isProduction });
     return res.redirect(303, '/');
   });
 });
@@ -546,53 +528,6 @@ app.get('/api/auth/me', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-// The browser never supplies a student ID here. Use the authenticated session
-// so one student cannot request another student's eligibility results.
-app.get('/api/scholarships/matches', async (req, res, next) => {
-  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
-  if (internalApiKey.length < 32) {
-    return res.status(503).json({ error: 'Scholarship eligibility service is not configured.' });
-  }
-  if (!fastApiBaseUrl) {
-    return res.status(503).json({ error: 'Set FASTAPI_BASE_URL to the deployed scholarship backend URL.' });
-  }
-
-  try {
-    const upstream = await fetch(
-      `${fastApiBaseUrl}/api/students/${encodeURIComponent(String(req.session.studentId))}/scholarship-matches`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'X-Internal-Api-Key': internalApiKey,
-        },
-        signal: AbortSignal.timeout(fastApiTimeoutMs),
-      },
-    );
-    if (!upstream.ok) {
-      console.error(`FastAPI eligibility service returned HTTP ${upstream.status}.`);
-      return res.status(502).json({ error: 'Scholarship eligibility service is unavailable.' });
-    }
-
-    let payload;
-    try {
-      payload = await upstream.json();
-    } catch {
-      return res.status(502).json({ error: 'Scholarship eligibility service returned an invalid response.' });
-    }
-    if (!payload || !Array.isArray(payload.matches)
-        || !payload.matches.every(match => match && typeof match === 'object' && !Array.isArray(match))) {
-      return res.status(502).json({ error: 'Scholarship eligibility service returned an invalid response.' });
-    }
-    return res.json({ matches: payload.matches });
-  } catch (error) {
-    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-      return res.status(504).json({ error: 'Scholarship eligibility request timed out.' });
-    }
-    console.error('FastAPI eligibility request failed:', error);
-    return res.status(502).json({ error: 'Scholarship eligibility service is unavailable.' });
-  }
-});
-
 function toClientApplication(application) {
   return {
     scholarshipKey: application.scholarship_key,
@@ -624,33 +559,10 @@ app.get('/api/applications', async (req, res, next) => {
 app.post('/api/applications', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
   try {
-    let scholarshipKey = String(req.body.scholarshipKey || '').trim().toLowerCase();
-    let scholarshipName = String(req.body.scholarshipName || '').trim();
-    if (!validScholarshipKey(scholarshipKey)) {
-      return res.status(400).json({ error: 'Provide a valid scholarship key and name.' });
-    }
-    const knownSchemeKey = scholarshipKey.match(/^scheme-(\d+)$/);
-    if (knownSchemeKey) {
-      const canonicalId = BigInt(knownSchemeKey[1]).toString();
-      const scheme = await pool.query(
-        'SELECT name FROM public.scholarships WHERE id = $1::bigint',
-        [canonicalId],
-      );
-      if (!scheme.rowCount) return res.status(404).json({ error: 'That scholarship is no longer available.' });
-      scholarshipKey = `scheme-${canonicalId}`;
-      scholarshipName = String(scheme.rows[0].name || '').trim();
-    }
+    const scholarshipKey = String(req.body.scholarshipKey || '').trim().toLowerCase();
+    const scholarshipName = String(req.body.scholarshipName || '').trim();
     if (!validScholarshipKey(scholarshipKey) || !scholarshipName || scholarshipName.length > 200) {
       return res.status(400).json({ error: 'Provide a valid scholarship key and name.' });
-    }
-    const existing = await pool.query(
-      `SELECT scholarship_name FROM student_applications
-       WHERE student_id = $1 AND scholarship_key = $2`,
-      [req.session.studentId, scholarshipKey],
-    );
-    if (existing.rowCount
-        && existing.rows[0].scholarship_name.trim().toLocaleLowerCase() !== scholarshipName.toLocaleLowerCase()) {
-      return res.status(409).json({ error: 'This tracker key is already linked to a different scholarship.' });
     }
     const result = await pool.query(
       `INSERT INTO student_applications (student_id, scholarship_key, scholarship_name)
@@ -730,12 +642,16 @@ app.post('/api/auth/profile', async (req, res, next) => {
       mobile_number: String(req.body.mobile_number || '').trim(),
       district: String(req.body.district || '').trim(),
     };
+    const validGenders = ['Female', 'Male', 'Other', 'Prefer not to say'];
+    const validCategories = ['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other'];
+    const validQualifications = ['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other'];
+    const validCourseLevels = ['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other'];
     const invalidOptionalNumber = [profile.annual_family_income, profile.qualification_marks, profile.course_year, profile.entrance_exam_rank].some(Number.isNaN);
     const invalidBoolean = ['has_disability', 'is_orphan', 'receives_other_scholarship'].some(key => !['', 'true', 'false'].includes(String(req.body[key] || '')));
     if (
-      !validDateOfBirth(profile.date_of_birth) || !PROFILE_ENUMS.genders.includes(profile.gender) || !PROFILE_ENUMS.categories.includes(profile.category) ||
+      !validDateOfBirth(profile.date_of_birth) || !validGenders.includes(profile.gender) || !validCategories.includes(profile.category) ||
       !profile.domicile_state || profile.domicile_state.length > 100 || profile.annual_family_income === null || Number.isNaN(profile.annual_family_income) ||
-      !PROFILE_ENUMS.qualifications.includes(profile.qualification_level) || !PROFILE_ENUMS.courseLevels.includes(profile.course_level) ||
+      !validQualifications.includes(profile.qualification_level) || !validCourseLevels.includes(profile.course_level) ||
       !profile.course_name || profile.course_name.length > 160 || profile.course_year === null || Number.isNaN(profile.course_year) || invalidOptionalNumber ||
       profile.institution_name.length > 200 || profile.parent_occupation.length > 160 || profile.father_name.length > 120 || profile.mother_name.length > 120 ||
       profile.district.length > 100 || (profile.mobile_number && !/^\d{10}$/.test(profile.mobile_number)) || invalidBoolean
@@ -856,7 +772,6 @@ if (process.env.VERCEL !== '1') {
     process.exit(1);
   });
 }
-
 
 
 
