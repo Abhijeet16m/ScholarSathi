@@ -1,59 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ScholarSathi | My Applications</title>
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScholarSathi | My Profile</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
 </head>
-<body class="page-applications">
+<body>
 <div class="app-shell">
   <aside class="sidebar">
-    <a class="brand" href="/dashboard.html" aria-label="ScholarSathi home">
-      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5.5c3.2-1.4 6.2-.8 9 1.5v13c-2.8-2.3-5.8-2.9-9-1.5z"/><path d="M21 5.5c-3.2-1.4-6.2-.8-9 1.5v13c2.8-2.3 5.8-2.9 9-1.5z"/></svg></span>
-      <span>Scholar<span class="accent">Sathi</span></span>
-    </a>
+    <a class="brand" href="/dashboard.html"><span class="brand-mark" aria-hidden="true">▤</span><span>Scholar<span class="accent">Sathi</span></span></a>
     <div class="nav-label">Student workspace</div>
     <nav class="nav-menu" aria-label="Main navigation">
-      <a class="nav-link" href="/dashboard.html"><span>Dashboard</span></a>
-      <a class="nav-link" href="/documents.html"><span>Documents</span></a>
-      <a class="nav-link active" href="/Application_index.html" aria-current="page"><span>My Applications</span><span class="nav-badge" id="application-count">0</span></a>
-      <a class="nav-link" href="/Profile_index.html"><span>My Profile</span></a>
+      <a class="nav-link" href="/dashboard.html"><span>▦</span><span>Dashboard</span></a>
+      <a class="nav-link" href="/documents.html"><span>♧</span><span>Documents</span></a>
+      <a class="nav-link" href="/Application_index.html"><span>▤</span><span>My Applications</span><span class="nav-badge" id="application-count">0</span></a>
+      <a class="nav-link" href="/Profile_index.html" aria-current="page"><span>♙</span><span>My Profile</span></a>
     </nav>
   </aside>
 
   <main class="main-panel">
     <header class="topbar">
-      <div><div class="eyebrow">Student workspace</div><h1>My Applications</h1></div>
-      <div class="user-actions">
-        <a class="profile-summary" href="/Profile_index.html" aria-label="Open profile"><span class="avatar" id="avatar-initials">ST</span><span class="profile-name" id="profile-name">Student</span></a>
-        <button class="logout-button" id="logout-button" type="button" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></button>
-      </div>
+      <div class="profile-page-heading"><div class="eyebrow">Student account</div><h1>Your profile</h1><p>These details are loaded from your account and used to check scholarship eligibility. Documents are not stored here.</p></div>
+      <div class="user-actions"><a class="profile-summary" href="/Profile_index.html" aria-label="Open profile"><span class="avatar" id="avatar-initials">ST</span><span class="profile-name" id="profile-name">Student</span></a><button class="logout-button" id="logout-button" type="button" aria-label="Log out" title="Log out">⇥</button></div>
     </header>
 
-    <section class="applications-content">
-      <div class="section-heading">
-        <span class="eyebrow">Tracker</span>
-        <h2>My applications</h2>
-        <p>Track interest, documents, and submissions for each scholarship.</p>
-      </div>
-      <form class="application-add-form" id="application-add-form">
-        <h3>Track a scholarship</h3>
-        <p>Enter the scholarship details from its official listing. Your tracker is saved to your signed-in account.</p>
-        <div class="application-add-fields">
-          <label>Scholarship name<input name="scholarshipName" type="text" maxlength="200" required placeholder="Name shown on the official scholarship page"></label>
-          <label>Tracker key<input name="scholarshipKey" type="text" maxlength="120" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,119}" required placeholder="Example: state-merit-2026"></label>
-          <button class="primary-button" type="submit">Add to tracker</button>
-        </div>
-        <small>Use a short unique key with letters, numbers, hyphens, or underscores.</small>
+    <section class="profile-content">
+
+      <form id="profile-form" class="profile-card">
+        <section class="form-section">
+          <h3>Account details</h3>
+          <p class="section-help">Name and email are verified account details. Contact support if you need to change your email.</p>
+          <div class="form-grid">
+            <div class="field"><label for="student-name">Full name</label><input id="student-name" name="name" type="text" readonly></div>
+            <div class="field"><label for="student-email">Email address</label><input id="student-email" name="email" type="email" readonly></div>
+            <div class="field"><label for="father-name">Father / guardian name</label><input id="father-name" name="father_name" type="text" maxlength="120"></div>
+            <div class="field"><label for="mother-name">Mother name</label><input id="mother-name" name="mother_name" type="text" maxlength="120"></div>
+            <div class="field"><label for="date-of-birth">Date of birth</label><input id="date-of-birth" name="date_of_birth" type="date" required></div>
+            <div class="field"><label for="gender">Gender</label><select id="gender" name="gender" required><option value="">Choose an option</option><option>Female</option><option>Male</option><option>Other</option><option>Prefer not to say</option></select></div>
+            <div class="field"><label for="mobile-number">Mobile number</label><input id="mobile-number" name="mobile_number" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10 digits"></div>
+            <div class="field"><label for="district">District</label><input id="district" name="district" type="text" maxlength="100"></div>
+          </div>
+        </section>
+
+        <section class="form-section eligibility-section">
+          <h3>Scholarship eligibility details</h3>
+          <p class="section-help">These details are saved to your student record and help explain potential matches.</p>
+          <div class="form-grid">
+            <div class="field"><label for="category">Social category</label><select id="category" name="category" required><option value="">Choose an option</option><option>General</option><option>EWS</option><option>OBC-NCL</option><option>SEBC</option><option>SC</option><option>ST</option><option>Other</option></select></div>
+            <div class="field"><label for="domicile-state">Domicile state / UT</label><input id="domicile-state" name="domicile_state" type="text" maxlength="100" required></div>
+            <div class="field"><label for="annual-income">Annual family income (₹)</label><input id="annual-income" name="annual_family_income" type="number" min="0" max="100000000" step="0.01" required></div>
+            <div class="field"><label for="disability">Disability status</label><select id="disability" name="has_disability"><option value="">Prefer not to say</option><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div class="field"><label for="orphan">Orphan status</label><select id="orphan" name="is_orphan"><option value="">Prefer not to say</option><option value="true">Yes</option><option value="false">No</option></select></div>
+            <div class="field"><label for="other-scholarship">Receiving another scholarship</label><select id="other-scholarship" name="receives_other_scholarship"><option value="">Prefer not to say</option><option value="true">Yes</option><option value="false">No</option></select></div>
+          </div>
+        </section>
+
+        <section class="form-section eligibility-section">
+          <h3>Education details</h3>
+          <p class="section-help">Use your current qualification and course details.</p>
+          <div class="form-grid">
+            <div class="field"><label for="qualification-level">Highest qualification</label><select id="qualification-level" name="qualification_level" required><option value="">Choose an option</option><option>Class 10</option><option>Class 12</option><option>Diploma</option><option>Undergraduate degree</option><option>Postgraduate degree</option><option>Other</option></select></div>
+            <div class="field"><label for="qualification-marks">Latest marks or percentage</label><input id="qualification-marks" name="qualification_marks" type="number" min="0" max="100" step="0.01"></div>
+            <div class="field"><label for="course-level">Current course level</label><select id="course-level" name="course_level" required><option value="">Choose an option</option><option>Pre-matric</option><option>Post-matric</option><option>Diploma</option><option>Undergraduate</option><option>Postgraduate</option><option>Research</option><option>Other</option></select></div>
+            <div class="field"><label for="course-name">Course or class name</label><input id="course-name" name="course_name" type="text" maxlength="160" required></div>
+            <div class="field"><label for="course-year">Current course year</label><input id="course-year" name="course_year" type="number" min="1" max="20" step="1" required></div>
+            <div class="field"><label for="entrance-rank">Entrance exam rank (optional)</label><input id="entrance-rank" name="entrance_exam_rank" type="number" min="1" max="100000000" step="1"></div>
+            <div class="field"><label for="institution-name">School / college / institution</label><input id="institution-name" name="institution_name" type="text" maxlength="200"></div>
+            <div class="field"><label for="parent-occupation">Parent / guardian occupation</label><input id="parent-occupation" name="parent_occupation" type="text" maxlength="160"></div>
+          </div>
+        </section>
+
+        <div class="form-footer"><p>Changes are saved to your ScholarSathi account.</p><div class="form-actions"><button type="button" class="cancel-button" id="reload-profile">Discard changes</button><button type="submit" class="save-button">Save profile <span>✓</span></button></div></div>
+        <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
       </form>
-      <p class="application-feedback" id="application-feedback" role="status" aria-live="polite"></p>
-      <div class="application-list" id="applications-list" aria-live="polite">
-        <p class="application-empty">Loading your applications…</p>
-      </div>
     </section>
   </main>
 </div>
-<script src="/assets/js/Application_script.js"></script><script src="/assets/js/workspace-menu.js"></script>
+<script src="/assets/js/extension-bridge.js"></script>
+<script src="/assets/js/Profile_script.js"></script>
+<script src="/assets/js/workspace-menu.js"></script>
 </body>
 </html>
