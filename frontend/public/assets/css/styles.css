@@ -4906,3 +4906,25 @@ body.page-profile .profile-content { margin-top: 30px; }
 @media (max-width: 1000px) and (min-width: 761px) {
     body.page-dashboard .app-shell > .sidebar { width: 232px; flex-basis: 232px; }
 }
+
+/* All app-shell workspace pages use a flow sidebar so the main header cannot sit under it. */
+@media (min-width: 761px) {
+    .app-shell > .sidebar {
+        position: relative;
+        inset: auto;
+        z-index: auto;
+        height: auto;
+        min-height: 100vh;
+        width: 264px;
+        flex: 0 0 264px;
+    }
+    .app-shell > .main-panel {
+        position: relative;
+        min-width: 0;
+        flex: 1 1 auto;
+        margin-left: 0;
+    }
+}
+@media (max-width: 1000px) and (min-width: 761px) {
+    .app-shell > .sidebar { width: 232px; flex-basis: 232px; }
+}
