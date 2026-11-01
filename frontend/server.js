@@ -477,6 +477,33 @@ app.post('/api/auth/logout', (req, res, next) => {
   });
 });
 
+function toClientProfile(student) {
+  return {
+    fullName: student.name || '',
+    fatherName: student.father_name || '',
+    motherName: student.mother_name || '',
+    dob: student.date_of_birth || '',
+    gender: student.gender || '',
+    category: student.category || '',
+    state: student.domicile_state || '',
+    district: student.district || '',
+    mobile: student.mobile_number || '',
+    email: student.email || '',
+    familyIncome: student.annual_family_income == null ? '' : String(student.annual_family_income),
+    percentage: student.qualification_marks == null ? '' : String(student.qualification_marks),
+    course: student.course_name || '',
+    courseYear: student.course_year == null ? '' : String(student.course_year),
+    qualificationLevel: student.qualification_level || '',
+    courseLevel: student.course_level || '',
+    entranceRank: student.entrance_exam_rank == null ? '' : String(student.entrance_exam_rank),
+    institution: student.institution_name || '',
+    parentOccupation: student.parent_occupation || '',
+    hasDisability: student.has_disability == null ? '' : student.has_disability ? 'Yes' : 'No',
+    isOrphan: student.is_orphan == null ? '' : student.is_orphan ? 'Yes' : 'No',
+    receivesOtherScholarship: student.receives_other_scholarship == null ? '' : student.receives_other_scholarship ? 'Yes' : 'No',
+  };
+}
+
 app.get('/api/auth/me', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ authenticated: false });
   try {
@@ -490,37 +517,80 @@ app.get('/api/auth/me', async (req, res, next) => {
     );
     const student = result.rows[0];
     if (!student) return res.status(401).json({ authenticated: false });
-    const categoryMap = { General: 'GEN', 'OBC-NCL': 'OBC', SEBC: 'OBC', SC: 'SC', ST: 'ST', EWS: 'EWS' };
-    const genderMap = { Female: 'female', Male: 'male', Other: 'other' };
     return res.json({
       authenticated: true,
       id: student.id,
       name: student.name,
-      profile: {
-        fullName: student.name || '',
-        fatherName: student.father_name || '',
-        motherName: student.mother_name || '',
-        dob: student.date_of_birth || '',
-        gender: genderMap[student.gender] || '',
-        category: categoryMap[student.category] || '',
-        state: student.domicile_state || '',
-        district: student.district || '',
-        mobile: student.mobile_number || '',
-        email: student.email || '',
-        familyIncome: student.annual_family_income == null ? '' : String(student.annual_family_income),
-        percentage: student.qualification_marks == null ? '' : String(student.qualification_marks),
-        course: student.course_name || '',
-        courseYear: student.course_year == null ? '' : String(student.course_year),
-        qualificationLevel: student.qualification_level || '',
-        courseLevel: student.course_level || '',
-        entranceRank: student.entrance_exam_rank == null ? '' : String(student.entrance_exam_rank),
-        institution: student.institution_name || '',
-        parentOccupation: student.parent_occupation || '',
-        hasDisability: student.has_disability == null ? '' : student.has_disability ? 'Yes' : 'No',
-        isOrphan: student.is_orphan == null ? '' : student.is_orphan ? 'Yes' : 'No',
-        receivesOtherScholarship: student.receives_other_scholarship == null ? '' : student.receives_other_scholarship ? 'Yes' : 'No',
-      },
+      profile: toClientProfile(student),
     });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/auth/profile', async (req, res, next) => {
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  try {
+    const profile = {
+      date_of_birth: String(req.body.date_of_birth || ''),
+      gender: String(req.body.gender || ''),
+      category: String(req.body.category || ''),
+      domicile_state: String(req.body.domicile_state || '').trim(),
+      annual_family_income: optionalNumber(req.body.annual_family_income, 0, 100000000),
+      qualification_level: String(req.body.qualification_level || ''),
+      qualification_marks: optionalNumber(req.body.qualification_marks, 0, 100),
+      course_level: String(req.body.course_level || ''),
+      course_name: String(req.body.course_name || '').trim(),
+      course_year: optionalNumber(req.body.course_year, 1, 20, true),
+      entrance_exam_rank: optionalNumber(req.body.entrance_exam_rank, 1, 100000000, true),
+      institution_name: String(req.body.institution_name || '').trim(),
+      parent_occupation: String(req.body.parent_occupation || '').trim(),
+      has_disability: optionalBoolean(req.body.has_disability),
+      is_orphan: optionalBoolean(req.body.is_orphan),
+      receives_other_scholarship: optionalBoolean(req.body.receives_other_scholarship),
+      father_name: String(req.body.father_name || '').trim(),
+      mother_name: String(req.body.mother_name || '').trim(),
+      mobile_number: String(req.body.mobile_number || '').trim(),
+      district: String(req.body.district || '').trim(),
+    };
+    const validGenders = ['Female', 'Male', 'Other', 'Prefer not to say'];
+    const validCategories = ['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other'];
+    const validQualifications = ['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other'];
+    const validCourseLevels = ['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other'];
+    const invalidOptionalNumber = [profile.annual_family_income, profile.qualification_marks, profile.course_year, profile.entrance_exam_rank].some(Number.isNaN);
+    const invalidBoolean = ['has_disability', 'is_orphan', 'receives_other_scholarship'].some(key => !['', 'true', 'false'].includes(String(req.body[key] || '')));
+    if (
+      !validDateOfBirth(profile.date_of_birth) || !validGenders.includes(profile.gender) || !validCategories.includes(profile.category) ||
+      !profile.domicile_state || profile.domicile_state.length > 100 || profile.annual_family_income === null || Number.isNaN(profile.annual_family_income) ||
+      !validQualifications.includes(profile.qualification_level) || !validCourseLevels.includes(profile.course_level) ||
+      !profile.course_name || profile.course_name.length > 160 || profile.course_year === null || Number.isNaN(profile.course_year) || invalidOptionalNumber ||
+      profile.institution_name.length > 200 || profile.parent_occupation.length > 160 || profile.father_name.length > 120 || profile.mother_name.length > 120 ||
+      profile.district.length > 100 || (profile.mobile_number && !/^\d{10}$/.test(profile.mobile_number)) || invalidBoolean
+    ) {
+      return res.status(400).json({ error: 'Please review the required profile fields and their values.' });
+    }
+
+    const result = await pool.query(
+      `UPDATE students SET
+        date_of_birth = $1, gender = $2, category = $3, domicile_state = $4, annual_family_income = $5,
+        qualification_level = $6, qualification_marks = $7, course_level = $8, course_name = $9, course_year = $10,
+        entrance_exam_rank = $11, institution_name = $12, has_disability = $13, is_orphan = $14,
+        parent_occupation = $15, receives_other_scholarship = $16, father_name = $17, mother_name = $18,
+        mobile_number = $19, district = $20
+       WHERE id = $21
+       RETURNING id, name, email, father_name, mother_name, date_of_birth, gender, category,
+        domicile_state, district, mobile_number, annual_family_income, qualification_level,
+        qualification_marks, course_level, course_name, course_year, entrance_exam_rank,
+        institution_name, parent_occupation, has_disability, is_orphan, receives_other_scholarship`,
+      [
+        profile.date_of_birth, profile.gender, profile.category, profile.domicile_state, profile.annual_family_income,
+        profile.qualification_level, profile.qualification_marks, profile.course_level, profile.course_name, profile.course_year,
+        profile.entrance_exam_rank, profile.institution_name || null, profile.has_disability, profile.is_orphan,
+        profile.parent_occupation || null, profile.receives_other_scholarship, profile.father_name || null,
+        profile.mother_name || null, profile.mobile_number || null, profile.district || null, req.session.studentId,
+      ],
+    );
+    const student = result.rows[0];
+    if (!student) return res.status(401).json({ error: 'Your student account could not be found.' });
+    return res.json({ saved: true, name: student.name, email: student.email, profile: toClientProfile(student) });
   } catch (error) { next(error); }
 });
 
