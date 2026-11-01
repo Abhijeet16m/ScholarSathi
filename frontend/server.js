@@ -528,6 +528,28 @@ app.get('/api/auth/me', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// The browser never supplies a student ID here. Use the authenticated session
+// so one student cannot request another student's eligibility results.
+app.get('/api/scholarships/matches', async (req, res, next) => {
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  try {
+    const result = await pool.query(
+      `SELECT m.*, scholarship.provider, scholarship.application_url,
+              scholarship.deadline, scholarship.scholarship_amount
+       FROM public.match_scholarships($1::bigint) AS m
+       LEFT JOIN public.scholarships AS scholarship
+         ON scholarship.id = m.scholarship_id
+       ORDER BY CASE m.eligibility_status
+         WHEN 'Eligible' THEN 0
+         WHEN 'Needs Verification' THEN 1
+         ELSE 2
+       END, m.matched_conditions DESC, m.scholarship_id`,
+      [req.session.studentId],
+    );
+    return res.json({ matches: result.rows });
+  } catch (error) { next(error); }
+});
+
 function toClientApplication(application) {
   return {
     scholarshipKey: application.scholarship_key,

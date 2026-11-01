@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScholarSathi | Discover scholarships</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="page-discover">
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/dashboard.html" aria-label="ScholarSathi home">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5.5c3.2-1.4 6.2-.8 9 1.5v13c-2.8-2.3-5.8-2.9-9-1.5z"/><path d="M21 5.5c-3.2-1.4-6.2-.8-9 1.5v13c2.8-2.3 5.8-2.9 9-1.5z"/></svg></span>
+      <span>Scholar<span class="brand-accent">Sathi</span></span>
+    </a>
+    <div class="nav-label">Student workspace</div>
+    <nav class="nav-menu" aria-label="Main navigation">
+      <a class="nav-link" href="/dashboard.html"><span>Dashboard</span></a>
+      <a class="nav-link" href="/documents.html"><span>Documents</span></a>
+      <a class="nav-link active" href="/Discover_index.html" aria-current="page"><span>Discover Scholarships</span></a>
+      <a class="nav-link" href="/Profile_index.html"><span>My Profile</span></a>
+      <a class="nav-link" href="/Application_index.html"><span>My Applications</span><span class="nav-badge" id="application-count">0</span></a>
+      <a class="nav-link" href="/Deadline_index.html"><span>Deadline Alerts</span></a>
+      <a class="nav-link" href="/Privacy_index.html"><span>Privacy Center</span></a>
+    </nav>
+    <div class="privacy-note"><span class="lock" aria-hidden="true">♙</span><div><strong>Your data, your choice</strong><p>Eligibility is calculated from your profile and scheme criteria.</p></div></div>
+    <a class="sidebar-profile" href="/Profile_index.html"><span class="avatar" id="sidebar-initials">ST</span><span><strong id="sidebar-name">Student</strong><small>Student profile</small></span></a>
+  </aside>
+  <main class="main-panel">
+    <header class="topbar">
+      <div><div class="eyebrow">Student workspace</div><h1>Discover scholarships</h1></div>
+      <div class="user-actions">
+        <a class="profile-summary" href="/Profile_index.html" aria-label="Open profile"><span class="avatar" id="avatar-initials">ST</span><span class="profile-name" id="profile-name">Student</span></a>
+        <button class="logout-button" id="logout-button" type="button" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg></button>
+      </div>
+    </header>
+    <section class="discover-content">
+      <div class="discover-heading">
+        <div><div class="eyebrow">Based on your profile</div><h2>Scholarship matches</h2></div>
+        <p>Compare eligibility signals, then confirm the current rules and deadline on the official scheme page.</p>
+      </div>
+      <form class="searchbar" id="match-search-form" role="search">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="match-search" type="search" placeholder="Search scholarships or providers" aria-label="Search scholarships or providers">
+        <button class="primary-button search-button" type="submit">Search</button>
+      </form>
+      <div class="results-meta"><span id="match-results-count" aria-live="polite">Loading matches…</span><span>Eligibility results</span></div>
+      <div class="scholarship-grid" id="scholarship-grid" aria-live="polite"><p class="muted">Loading scholarship matches…</p></div>
+      <p class="match-feedback" id="match-feedback" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</div>
+<script src="/assets/js/student-dashboard.js"></script>
+<script src="/assets/js/workspace-menu.js"></script>
+</body>
+</html>
