@@ -4638,3 +4638,51 @@ body:has(#view-workspace) .view-btn { height: 42px; font-size: 12px; }
     body:has(#view-workspace) .scholarship-grid { grid-template-columns: 1fr; }
     body:has(#view-workspace) .scholarship-card { min-height: 0; }
 }
+
+/* Application tracker only. Keep these rules scoped so other pages are unaffected. */
+.applications-content { width: min(100% - 48px, 960px); margin: 72px auto 60px; }
+.applications-content .section-heading { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 20px; }
+.applications-content .section-heading h2 { font-size: 29px; letter-spacing: -.8px; margin: 0; white-space: nowrap; }
+.applications-content .section-heading p { margin: 0; color: #71818a; font-size: 13px; line-height: 1.5; }
+.application-feedback { min-height: 20px; margin: 18px 0 10px; color: #427269; font-size: 13px; }
+.application-feedback.is-error { color: #a12b2b; }
+.applications-content .application-list { display: grid; gap: 16px; }
+.applications-content .application-card { padding: 24px; }
+.applications-content .application-top h3 { font-size: 18px; }
+.applications-content .status-submitted { background: #e2f4ed; color: #08715f; }
+.applications-content .status-submitted .status-dot { background: #0a927d; }
+.applications-content .application-progress { display: flex; align-items: center; gap: 26px; margin: 27px 0 22px; }
+.applications-content .application-stage { display: inline-flex; align-items: center; gap: 8px; color: #71818a; font-size: 13px; white-space: nowrap; }
+.applications-content .application-stage.is-complete { color: #087d6d; font-weight: 700; }
+.applications-content .application-stage-marker { width: 17px; height: 17px; flex: 0 0 17px; display: inline-grid; place-items: center; border: 1px solid #cbdad6; border-radius: 50%; background: #fff; color: transparent; font-size: 11px; }
+.applications-content .application-stage.is-complete .application-stage-marker { border-color: #0a927d; background: #0a927d; color: #fff; }
+.applications-content .application-stage input { width: 17px; height: 17px; margin: 0; accent-color: #0a927d; cursor: pointer; }
+.applications-content .application-stage input:focus-visible { outline: 2px solid #14594e; outline-offset: 2px; }
+.applications-content .application-stage input:checked + .application-stage-marker { border-color: #0a927d; background: #0a927d; color: #fff; }
+.applications-content .application-stage input:checked + .application-stage-marker::before { content: "✓"; }
+.applications-content .application-stage.is-checkable { cursor: pointer; }
+.applications-content .application-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.applications-content .application-actions .checklist-button { min-height: 44px; }
+.applications-content .primary-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border: 0; border-radius: 11px; background: #173e37; color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
+.applications-content .primary-button:disabled { opacity: .55; cursor: not-allowed; }
+.applications-content .mark-submitted-button { background: #173e37; }
+.applications-content .mark-submitted-button:hover { background: #0f332c; }
+.applications-content .application-empty { padding: 24px; border: 1px dashed #c9d8d4; border-radius: 14px; color: #64768a; background: #fff; }
+.applications-content .application-card-focused { outline: 2px solid #0a927d; outline-offset: 2px; }
+
+@media (max-width: 1000px) {
+    .applications-content .section-heading { grid-template-columns: auto auto; gap: 10px 16px; }
+    .applications-content .section-heading p { grid-column: 1 / -1; }
+}
+
+@media (max-width: 760px) {
+    .applications-content { width: calc(100% - 28px); margin: 36px auto; }
+    .applications-content .section-heading { display: block; }
+    .applications-content .section-heading h2 { margin: 8px 0; font-size: 25px; white-space: normal; }
+    .applications-content .application-card { padding: 20px 17px; }
+    .applications-content .application-top { display: block; }
+    .applications-content .status { display: inline-flex; margin-top: 14px; }
+    .applications-content .application-progress { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .applications-content .application-actions { flex-direction: column; }
+    .applications-content .application-actions > * { width: 100%; }
+}

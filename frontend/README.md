@@ -26,7 +26,9 @@ Registration collects date of birth, gender, social category, domicile, annual f
 
 Registration sends an OTP before the account is created. Every login first checks the password, sends a separate sign-in OTP, and creates the authenticated session only after the code is verified. Codes expire after ten minutes; resending is subject to a cooldown.
 
-After registration or login verification succeeds, the server opens `dashboard.html`. All workspace pages are served through a signed-in-session check. On the dashboard, the signed-in student profile is sent to the installed extension so its smart-fill profile matches the website account. Scholarship discovery, profile editing, application tracking, deadlines, and privacy controls still contain demo behavior and do not have complete backend APIs.
+After registration or login verification succeeds, the server opens `dashboard.html`. All workspace pages are served through a signed-in-session check. On the dashboard, the signed-in student profile is sent to the installed extension so its smart-fill profile matches the website account. Opening one of the dashboard scholarship cards creates or reopens that student's application tracker entry. The tracker saves the manually checked Documents stage and the submitted status in PostgreSQL, scoped to the signed-in student.
+
+Application tracker endpoints are `GET /api/applications`, `POST /api/applications`, `PATCH /api/applications/:scholarshipKey/documents`, and `POST /api/applications/:scholarshipKey/submitted`. Marking an application submitted requires the Documents stage to be checked first. The student should use this action after submitting on the scholarship provider's website; the provider's portal is not integrated with ScholarSathi.
 
 Forgot password is also connected end to end: request a reset code, verify it, and set a new password. The server updates the scrypt password hash; it never stores or displays the original password. The reset request uses a generic response so the page does not reveal whether an email has an account.
 
@@ -48,7 +50,7 @@ Forgot password is also connected end to end: request a reset code, verify it, a
 
 5. Visit `http://localhost:3000`.
 
-At startup the backend creates the `students` table and adds any new profile columns to an existing table. You can also review or run `schema.sql` manually in Neon. Existing accounts are retained; new profile fields are blank until they are collected.
+At startup the backend creates the `students` and `student_applications` tables and adds any new profile columns to an existing table. You can also review or run `schema.sql` manually in Neon. Existing accounts are retained; new profile fields are blank until they are collected.
 
 ## Deploying the website to Vercel
 

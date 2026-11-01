@@ -46,6 +46,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
+app.use(express.json({ limit: '20kb' }));
 app.use(session({
   store: new PgSession({ pool, createTableIfMissing: true }),
   name: 'scholarsathi.sid',
@@ -526,6 +527,95 @@ app.get('/api/auth/me', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+function toClientApplication(application) {
+  return {
+    scholarshipKey: application.scholarship_key,
+    scholarshipName: application.scholarship_name,
+    interestedAt: application.interested_at,
+    documentsChecked: application.documents_checked,
+    submitted: Boolean(application.submitted_at),
+    submittedAt: application.submitted_at,
+    updatedAt: application.updated_at,
+  };
+}
+
+function validScholarshipKey(value) {
+  return /^[a-z0-9][a-z0-9_-]{0,119}$/.test(value);
+}
+
+app.get('/api/applications', async (req, res, next) => {
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  try {
+    const result = await pool.query(
+      `SELECT scholarship_key, scholarship_name, interested_at, documents_checked, submitted_at, updated_at
+       FROM student_applications WHERE student_id = $1 ORDER BY updated_at DESC, id DESC`,
+      [req.session.studentId],
+    );
+    return res.json({ applications: result.rows.map(toClientApplication) });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/applications', async (req, res, next) => {
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  try {
+    const scholarshipKey = String(req.body.scholarshipKey || '').trim().toLowerCase();
+    const scholarshipName = String(req.body.scholarshipName || '').trim();
+    if (!validScholarshipKey(scholarshipKey) || !scholarshipName || scholarshipName.length > 200) {
+      return res.status(400).json({ error: 'Provide a valid scholarship key and name.' });
+    }
+    const result = await pool.query(
+      `INSERT INTO student_applications (student_id, scholarship_key, scholarship_name)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (student_id, scholarship_key) DO UPDATE
+         SET scholarship_name = EXCLUDED.scholarship_name, updated_at = NOW()
+       RETURNING scholarship_key, scholarship_name, interested_at, documents_checked, submitted_at, updated_at`,
+      [req.session.studentId, scholarshipKey, scholarshipName],
+    );
+    return res.json({ application: toClientApplication(result.rows[0]) });
+  } catch (error) { next(error); }
+});
+
+app.patch('/api/applications/:scholarshipKey/documents', async (req, res, next) => {
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  try {
+    const scholarshipKey = String(req.params.scholarshipKey || '').trim().toLowerCase();
+    if (!validScholarshipKey(scholarshipKey) || typeof req.body.checked !== 'boolean') {
+      return res.status(400).json({ error: 'A valid scholarship key and checked value are required.' });
+    }
+    const result = await pool.query(
+      `UPDATE student_applications SET documents_checked = $1, updated_at = NOW()
+       WHERE student_id = $2 AND scholarship_key = $3
+       RETURNING scholarship_key, scholarship_name, interested_at, documents_checked, submitted_at, updated_at`,
+      [req.body.checked, req.session.studentId, scholarshipKey],
+    );
+    if (!result.rowCount) return res.status(404).json({ error: 'Open this scholarship from your dashboard first.' });
+    return res.json({ application: toClientApplication(result.rows[0]) });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/applications/:scholarshipKey/submitted', async (req, res, next) => {
+  if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  try {
+    const scholarshipKey = String(req.params.scholarshipKey || '').trim().toLowerCase();
+    if (!validScholarshipKey(scholarshipKey)) return res.status(400).json({ error: 'Invalid scholarship key.' });
+    const result = await pool.query(
+      `UPDATE student_applications
+       SET submitted_at = COALESCE(submitted_at, NOW()), updated_at = NOW()
+       WHERE student_id = $1 AND scholarship_key = $2 AND documents_checked = TRUE
+       RETURNING scholarship_key, scholarship_name, interested_at, documents_checked, submitted_at, updated_at`,
+      [req.session.studentId, scholarshipKey],
+    );
+    if (result.rowCount) return res.json({ application: toClientApplication(result.rows[0]) });
+
+    const existing = await pool.query(
+      'SELECT documents_checked FROM student_applications WHERE student_id = $1 AND scholarship_key = $2',
+      [req.session.studentId, scholarshipKey],
+    );
+    if (!existing.rowCount) return res.status(404).json({ error: 'Open this scholarship from your dashboard first.' });
+    return res.status(409).json({ error: 'Check the Documents stage before recording the submission.' });
+  } catch (error) { next(error); }
+});
+
 app.post('/api/auth/profile', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
   try {
@@ -650,6 +740,18 @@ async function start() {
     ADD COLUMN IF NOT EXISTS mother_name TEXT,
     ADD COLUMN IF NOT EXISTS mobile_number TEXT,
     ADD COLUMN IF NOT EXISTS district TEXT`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS student_applications (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    scholarship_key TEXT NOT NULL,
+    scholarship_name TEXT NOT NULL,
+    interested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    documents_checked BOOLEAN NOT NULL DEFAULT FALSE,
+    submitted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (student_id, scholarship_key)
+  )`);
   app.listen(port, () => console.log(`ScholarSathi auth server listening on http://localhost:${port}`));
 }
 export default app;
