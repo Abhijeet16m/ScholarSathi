@@ -685,9 +685,16 @@ app.post('/api/auth/profile', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.use('/api', (req, res) => {
+  return res.status(404).json({ error: 'This API endpoint is not available in the deployed backend.' });
+});
+
 app.use((error, req, res, next) => {
   console.error(error);
   if (res.headersSent) return next(error);
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: 'The server could not complete this request. Check the Vercel runtime logs for the underlying error.' });
+  }
   return show(res, 'Something went wrong', 'The request could not be completed. Please try again in a moment.', 500);
 });
 

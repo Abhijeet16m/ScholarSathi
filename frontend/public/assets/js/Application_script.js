@@ -27,7 +27,13 @@ async function requestJson(url, options = {}) {
     window.location.replace("/");
     throw new Error("Your sign-in session has expired.");
   }
-  if (!response.ok) throw new Error(payload.error || "The request could not be completed.");
+  if (!response.ok) {
+    const message = payload.error || `The server returned ${response.status}. Check your connection and try again.`;
+    throw new Error(message);
+  }
+  if (!Array.isArray(payload.applications) && url === "/api/applications") {
+    throw new Error("The applications endpoint returned an unexpected response. Check the deployed backend version.");
+  }
   return payload;
 }
 
@@ -166,6 +172,30 @@ document.getElementById("logout-button").addEventListener("click", async () => {
     window.location.replace("/");
   } catch (error) {
     setFeedback(error.message, true);
+  }
+});
+
+document.getElementById("application-add-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const submit = form.querySelector('button[type="submit"]');
+  const values = new FormData(form);
+  submit.disabled = true;
+  try {
+    await requestJson("/api/applications", {
+      method: "POST",
+      body: JSON.stringify({
+        scholarshipName: String(values.get("scholarshipName") || "").trim(),
+        scholarshipKey: String(values.get("scholarshipKey") || "").trim().toLowerCase(),
+      }),
+    });
+    form.reset();
+    renderApplications(await loadApplications());
+    setFeedback("Scholarship added to your application tracker.");
+  } catch (error) {
+    setFeedback(error.message, true);
+  } finally {
+    submit.disabled = false;
   }
 });
 

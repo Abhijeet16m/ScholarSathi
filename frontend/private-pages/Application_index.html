@@ -42,6 +42,16 @@
         <h2>My applications</h2>
         <p>Track interest, documents, and submissions for each scholarship.</p>
       </div>
+      <form class="application-add-form" id="application-add-form">
+        <h3>Track a scholarship</h3>
+        <p>Enter the scholarship details from its official listing. Your tracker is saved to your signed-in account.</p>
+        <div class="application-add-fields">
+          <label>Scholarship name<input name="scholarshipName" type="text" maxlength="200" required placeholder="Name shown on the official scholarship page"></label>
+          <label>Tracker key<input name="scholarshipKey" type="text" maxlength="120" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,119}" required placeholder="Example: state-merit-2026"></label>
+          <button class="primary-button" type="submit">Add to tracker</button>
+        </div>
+        <small>Use a short unique key with letters, numbers, hyphens, or underscores.</small>
+      </form>
       <p class="application-feedback" id="application-feedback" role="status" aria-live="polite"></p>
       <div class="application-list" id="applications-list" aria-live="polite">
         <p class="application-empty">Loading your applications…</p>
@@ -49,6 +59,6 @@
     </section>
   </main>
 </div>
-<script src="/assets/js/Application_script.js"></script>
+<script src="/assets/js/Application_script.js"></script><script src="/assets/js/workspace-menu.js"></script>
 </body>
 </html>

@@ -4686,3 +4686,150 @@ body:has(#view-workspace) .view-btn { height: 42px; font-size: 12px; }
     .applications-content .application-actions { flex-direction: column; }
     .applications-content .application-actions > * { width: 100%; }
 }
+
+/* Shared GitHub-style navigation drawer for authenticated student pages. */
+.topbar-title-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.workspace-menu-toggle {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid #d7e2df;
+    border-radius: 10px;
+    background: #fff;
+    color: #173e37;
+    cursor: pointer;
+}
+
+.workspace-menu-toggle svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+
+.workspace-menu-toggle:hover { background: #eef7f4; }
+.workspace-menu-toggle:focus-visible,
+.workspace-menu-scrim:focus-visible { outline: 3px solid #0a927d; outline-offset: 2px; }
+.workspace-menu-scrim { display: none; }
+
+@media (min-width: 761px) {
+    body.workspace-sidebar-collapsed .app-shell > .sidebar { display: none !important; }
+    body.workspace-sidebar-collapsed:has(#view-workspace) .main { margin-left: 0 !important; }
+}
+
+@media (max-width: 760px) {
+    body .app-shell > .sidebar {
+        position: fixed !important;
+        z-index: 1002;
+        inset: 0 auto 0 0;
+        width: min(320px, 86vw) !important;
+        height: 100dvh;
+        min-height: 100dvh !important;
+        flex: 0 0 min(320px, 86vw) !important;
+        overflow-y: auto;
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        box-shadow: 14px 0 40px #09251f30;
+    }
+    body.workspace-menu-open .app-shell > .sidebar { transform: translateX(0); }
+    body.workspace-menu-open { overflow: hidden; }
+    body.workspace-menu-open .workspace-menu-scrim {
+        display: block;
+        position: fixed;
+        z-index: 1001;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #071b18a6;
+    }
+    body .app-shell > .sidebar .nav-label,
+    body .app-shell > .sidebar .privacy-note,
+    body .app-shell > .sidebar .sidebar-profile { display: flex; }
+    body .app-shell > .sidebar .nav-label { display: block; }
+    body .app-shell > .sidebar .nav-menu { flex-direction: column; overflow: visible; }
+    body .app-shell > .sidebar .nav-link { flex: 0 0 auto; white-space: normal; }
+    body .app-shell > .sidebar .nav-link svg { display: block; }
+    body:has(#view-workspace) .sidebar .side-label,
+    body:has(#view-workspace) .sidebar .privacy-note { display: flex; }
+    body:has(#view-workspace) .sidebar .side-label { display: block; }
+    body:has(#view-workspace) .sidebar .nav { flex-direction: column; overflow: visible; }
+    body:has(#view-workspace) .sidebar .nav-item { flex: 0 0 auto; }
+    body:has(#view-workspace) .sidebar .nav-icon { display: inline-block; }
+    .topbar { gap: 10px; }
+    .topbar-title-group { gap: 10px; }
+}
+
+/* Prevent heading grids from forcing profile and tracker content underneath the sidebar. */
+.profile-content,
+.applications-content { min-width: 0; max-width: 100%; }
+.profile-heading {
+    grid-template-columns: minmax(0, auto) minmax(0, auto);
+    justify-content: start;
+    gap: 10px 22px;
+}
+.profile-heading p { grid-column: 1 / -1; max-width: 72ch; }
+.profile-heading h2 { white-space: normal; }
+.applications-content { width: min(calc(100% - 64px), 1100px); margin: 42px auto 60px; }
+.applications-content .section-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 18px;
+    margin-bottom: 18px;
+}
+.applications-content .section-heading h2 { white-space: normal; }
+.applications-content .section-heading p { flex: 1 1 280px; }
+
+@media (max-width: 760px) {
+    .profile-content { width: calc(100% - 32px); margin: 24px auto 38px; }
+    .profile-heading { display: block; }
+    .profile-heading p { margin-top: 10px; }
+    .applications-content { width: calc(100% - 32px); margin: 28px auto 40px; }
+}
+
+/* Application tracker form and consistent workspace sidebar sizing. */
+.app-shell > .sidebar { width: 264px; flex-basis: 264px; }
+.application-add-form {
+    margin: 0 0 18px;
+    padding: 20px;
+    border: 1px solid #dfe7e7;
+    border-radius: 15px;
+    background: #fff;
+}
+.application-add-form h3 { margin: 0 0 6px; font-size: 16px; }
+.application-add-form p { margin: 0 0 16px; color: #71818a; font-size: 13px; line-height: 1.5; }
+.application-add-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) auto;
+    align-items: end;
+    gap: 12px;
+}
+.application-add-fields label { display: grid; gap: 7px; color: #24373d; font-size: 12px; font-weight: 700; }
+.application-add-fields input {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid #d8e4e1;
+    border-radius: 10px;
+    color: #22353b;
+    font: inherit;
+    font-weight: 400;
+}
+.application-add-fields input:focus { outline: 3px solid #078d7b20; border-color: #078d7b; }
+.application-add-form small { display: block; margin-top: 10px; color: #71818a; font-size: 11px; }
+@media (max-width: 1000px) { .app-shell > .sidebar { width: 232px; flex-basis: 232px; } }
+@media (max-width: 700px) {
+    .application-add-fields { grid-template-columns: 1fr; }
+    .application-add-form { padding: 16px; }
+}
