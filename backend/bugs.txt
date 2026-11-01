@@ -1,0 +1,196 @@
+ScholarSathi Backend Audit
+Scope: Read-only source review of backend Python modules, the adjacent JSON eligibility engine and sample data, backend tests, configuration/dependency manifests, and API/change-detection references. No live scraper, Gemini request, or database query was run.
+
+### [BUG-001] No backend API routes or server entry point
+
+- **Category:** Bug
+- **Severity:** High
+- **Location:** `backend/main.py:68-74`; backend Python source tree
+- **Problem:** The backend contains a command-line ingestion entry point, but no FastAPI application, router, or API route implementation was found. Consequently, the repository's backend cannot serve scholarship discovery, profile, or eligibility requests.
+- **Evidence:** `main()` only loops through `PORTALS` and runs `process_portal`; repository search found no `FastAPI`, `APIRouter`, or route decorators in backend Python files.
+- **Impact:** A frontend or extension cannot retrieve persisted scholarships or submit a profile to this backend through an API.
+- **Suggested Fix:** Implement the required routes and an ASGI application before treating the backend as an API service.
+- **Confidence:** Confirmed
+
+### [BUG-002] Eligibility engine is disconnected from persisted scholarships and student profiles
+
+- **Category:** Bug
+- **Severity:** High
+- **Location:** `scholarship/engine.py:168-213`; `backend/main.py:42-57`
+- **Problem:** The eligibility engine reads local JSON notice/profile files and prints results. The ingestion pipeline writes extracted scholarships to PostgreSQL, but does not call the engine; no profile persistence or API integration was found.
+- **Evidence:** Engine `main()` loads JSON paths and calls `print_notice`; the backend ingestion path ends after `upsert_scholarship`.
+- **Impact:** Eligibility results and explanations cannot be calculated from the scholarships and student profiles processed by the backend.
+- **Suggested Fix:** Connect the eligibility evaluation flow to the stored scholarship and profile data when that integration is implemented.
+- **Confidence:** Confirmed
+
+### [BUG-003] Unknown conditional eligibility can still produce an ineligible result
+
+- **Category:** Logic
+- **Severity:** High
+- **Location:** `scholarship/engine.py:53-71`
+- **Problem:** When a rule condition cannot be evaluated, `check_rule()` records `verify` but continues to evaluate the conditional rule itself. A failed conditional field then returns `no`, which makes the overall result `NOT ELIGIBLE` even though it is unknown whether that rule applies.
+- **Evidence:** The `applies is None` branch returns only for that check's message path; unlike `applies is False`, it does not return from `check_rule()`. The overall evaluator gives any `no` precedence over `verify` at lines 98-102. For example, notice 2 rule r3 is conditional on `current_year_of_study == 2`.
+- **Impact:** Students with incomplete profiles can be incorrectly classified as ineligible for a conditional criterion.
+- **Suggested Fix:** Do not treat a conditional rule's result as a failure until its condition is known to apply; return a verification outcome for that rule when applicability is unknown.
+- **Confidence:** Confirmed
+
+### [BUG-004] A notice with no rules is classified as eligible
+
+- **Category:** Logic
+- **Severity:** High
+- **Location:** `scholarship/engine.py:83-104`
+- **Problem:** If both `rules` and `verify_only` are empty, `statuses` is empty and the fallback result is `ELIGIBLE`.
+- **Evidence:** The result selection checks only for `no` and `verify`; otherwise it returns `ELIGIBLE`.
+- **Impact:** An incomplete or malformed notice can appear to be a confirmed match despite containing no machine-checkable eligibility criteria.
+- **Suggested Fix:** Treat an empty criteria set as `VERIFY` or invalid notice data rather than eligible.
+- **Confidence:** Confirmed
+
+### [BUG-005] Document alternative names are ignored by the eligibility engine
+
+- **Category:** Logic
+- **Severity:** Medium
+- **Location:** `scholarship/engine.py:117-130`; `scholarship/azim_premji.json` required document d3
+- **Problem:** The engine checks `alternatives_keys`, but the Azim Premji sample supplies alternatives under `alternatives` as display names and omits `alternatives_keys` for d3. The listed bank-account statement therefore cannot satisfy the bank-passbook requirement unless the profile separately stores the primary `doc_key`.
+- **Evidence:** `evaluate_documents()` builds candidate keys from `doc_key` and `alternatives_keys`; the sample's d3 contains `alternatives: ["Bank Passbook", "Bank Account Statement"]` only.
+- **Impact:** A student who has an accepted alternative document may be told it is missing.
+- **Suggested Fix:** Store normalized alternative document keys in the format consumed by the engine and validate notice data for this field.
+- **Confidence:** Confirmed
+
+### [BUG-006] Failed PDF extraction is treated as usable input and can still be stored
+
+- **Category:** Reliability
+- **Severity:** High
+- **Location:** `backend/utils.py:36-55`; `backend/main.py:42-57`
+- **Problem:** Per-document download/conversion errors are caught and discarded. If every PDF fails, extraction returns an empty string; `main.py` still sends that string to Gemini and stores the resulting structured record without marking the missing source text.
+- **Evidence:** `extract_scholarship_pdfs()` returns the joined successful documents, which is `""` when none succeed. The caller unconditionally invokes `extract_scholarship_info()` and `upsert_scholarship()`.
+- **Impact:** Eligibility fields can be absent or based only on brief listing content while the row is persisted as a normal scholarship record.
+- **Suggested Fix:** Track extraction success and prevent or explicitly flag persistence when required source documents could not be read.
+- **Confidence:** Confirmed
+
+### [BUG-007] All card links are treated as PDFs and repeated link labels overwrite one another
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** `backend/webScrap/nsp.py:14-17`; `backend/utils.py:18-24, 36-43`
+- **Problem:** The scraper places every anchor in a card into `pdf_links` without checking its file type or resolving relative URLs. Its dictionary comprehension also overwrites earlier links that have the same visible label. The PDF extractor then requests each retained value as a standalone URL.
+- **Evidence:** `card.find_all("a", href=True)` has no PDF filter or base-URL resolution; dict keys are link text; `requests.get(url)` consumes each value directly.
+- **Impact:** Apply/detail links can cause avoidable failed PDF conversions; relative links fail URL parsing; same-label documents can be silently omitted.
+- **Suggested Fix:** Identify actual document links, resolve them against the listing page URL, and preserve multiple URLs even when labels repeat.
+- **Confidence:** Confirmed for the parser behavior; actual affected NSP links depend on live markup.
+
+### [BUG-008] Scraped document URLs are fetched without destination or size controls
+
+- **Category:** Security
+- **Severity:** Medium
+- **Location:** `backend/webScrap/nsp.py:14-17`; `backend/utils.py:18-29`; `backend/Scrapper.py:63-70`
+- **Problem:** URLs obtained from fetched HTML are passed to `requests.get()` without scheme/host validation, redirect restrictions, content-type checks, or a response-size limit. The PDF response is fully buffered in memory before conversion.
+- **Evidence:** The scraper accepts arbitrary `href` values; both fetch functions follow Requests' normal redirect behavior; `response.content` is read in full and written without a size bound.
+- **Impact:** A compromised or unexpectedly modified source page could make the worker request internal or unrelated hosts (SSRF) or consume excessive network and memory resources with large responses.
+- **Suggested Fix:** Restrict allowed schemes/destinations and redirects, validate downloaded content, and enforce download/page/resource limits.
+- **Confidence:** Potential; exploitability depends on source-page control and runtime network access.
+
+### [BUG-009] PDF conversion uses a shared fixed working-directory filename
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** `backend/utils.py:18-33`
+- **Problem:** Every conversion writes to and reads from `temp_scholarship.pdf` relative to the process working directory. The file is not removed after conversion.
+- **Evidence:** The path is hard-coded in both `open()` and `converter.convert()`; there is no cleanup or per-document unique path.
+- **Impact:** Concurrent pipeline processes can overwrite one another's input while conversion is in progress. A run can also overwrite a file with that name in its current working directory and leave downloaded content behind.
+- **Suggested Fix:** Use a unique temporary file per conversion and clean it up reliably after Docling finishes.
+- **Confidence:** Confirmed for shared-path behavior; corruption requires overlapping runs.
+
+### [BUG-010] NULL providers can bypass the scholarship conflict key
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** `backend/llm.py:14-17`; `backend/db.py:102-134, 177-186`
+- **Problem:** `provider` is optional and defaults to `None`, while the upsert relies on `ON CONFLICT (name, provider)`. Under PostgreSQL's ordinary unique-constraint semantics, NULL values are distinct, so repeated rows with the same name and NULL provider do not conflict unless the database constraint uses `NULLS NOT DISTINCT` or another matching mechanism.
+- **Evidence:** The model permits a null provider, the database defaults it to null, and the SQL conflict target includes provider. The repository contains no schema or migration to establish special NULL behavior.
+- **Impact:** Re-runs can insert duplicate scholarship rows when Gemini does not identify a provider.
+- **Suggested Fix:** Verify the production constraint and define a stable non-null identity or database uniqueness behavior for missing providers.
+- **Confidence:** Potential because the production schema and PostgreSQL version are unavailable.
+
+### [BUG-011] Complete duplicate rows are detected only after costly PDF and Gemini processing
+
+- **Category:** Performance
+- **Severity:** Medium
+- **Location:** `backend/main.py:42-57, 59-62`
+- **Problem:** The pipeline extracts all PDFs and calls Gemini before `upsert_scholarship()` can return `None` for a complete duplicate.
+- **Evidence:** The complete-row check is inside the database upsert, which is called after PDF extraction and AI extraction.
+- **Impact:** Re-running the pipeline still pays the download, Docling, and Gemini cost for scholarships that are ultimately skipped.
+- **Suggested Fix:** Once a reliable identity key is available before extraction, check completeness before processing expensive sources.
+- **Confidence:** Confirmed
+
+### [BUG-012] Structured output is type-checked but not semantically validated
+
+- **Category:** Logic
+- **Severity:** Medium
+- **Location:** `backend/llm.py:14-44, 68-99`
+- **Problem:** Pydantic checks broad types, but dates remain arbitrary strings and there are no validators for date format/order, nonnegative amounts/income, marks/percent ranges, age order, or other domain constraints. The prompt asks Gemini to follow these rules but does not enforce them in application code.
+- **Evidence:** `application_open_date` and `deadline` are `str | None`; numeric fields are unconstrained `float`/`int`; the result is accepted after `model_validate_json()` and sent to the database.
+- **Impact:** Schema-valid but nonsensical values can be stored and later used for display or matching.
+- **Suggested Fix:** Add application-side domain validation for values whose ranges and relationships are defined by the product/schema.
+- **Confidence:** Confirmed for the absence of validation; bad model output is conditional.
+
+### [BUG-013] Per-scholarship failures are logged but the ingestion run can exit successfully
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** `backend/main.py:23-26, 42-70`
+- **Problem:** Individual processing exceptions are printed and swallowed; the loop continues, and `main()` does not report aggregate failure or return a failing exit status. A scheduler or operator can see a successful process exit even if every scholarship failed to store.
+- **Evidence:** The exception handler prints at lines 64-65 and does not re-raise or record a failure count; `main()` returns normally after `process_portal()`.
+- **Impact:** Failed or partial ingestion can go unnoticed and is harder to retry or alert on.
+- **Suggested Fix:** Track per-item outcomes and expose a nonzero run status or structured summary when processing fails.
+- **Confidence:** Confirmed
+
+### [BUG-014] Transient Gemini and database failures have no retry path
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** `backend/llm.py:90-99`; `backend/db.py:189-194`; `backend/main.py:64-65`
+- **Problem:** Each scholarship gets one Gemini request and one database attempt. Any transient API, rate-limit, or connection failure is caught by the outer item handler and the item is abandoned for that run.
+- **Evidence:** No retry/backoff code appears in these calls; the caller catches the exception and advances to the next scholarship.
+- **Impact:** Temporary external-service outages can cause records to be skipped until a later manual rerun.
+- **Suggested Fix:** Use bounded retries for transient failures and retain an explicit failed-item record or run summary.
+- **Confidence:** Confirmed
+
+### [BUG-015] The live Gemini test makes an API request during test collection/import
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** `backend/tests/test_gemini_live.py:26-42`
+- **Problem:** The file executes extraction at module top level rather than inside an explicitly invoked test or opt-in command. Test discovery/import therefore triggers a live Gemini request.
+- **Evidence:** The module-level `try` block calls `extract_scholarship_info()` directly; the file name matches pytest's `test_*.py` discovery pattern.
+- **Impact:** A routine test run can use API quota, depend on network/credentials, print live output, and contact Gemini unexpectedly.
+- **Suggested Fix:** Move the call behind an explicit opt-in test marker or executable entry point and mock it in normal tests.
+- **Confidence:** Confirmed
+
+### [BUG-016] Backend tests are ignored and the test runner is undeclared
+
+- **Category:** Reliability
+- **Severity:** Low
+- **Location:** `.gitignore:6`; `requirements.txt:1-7`; `backend/tests/test_backend.py:1`
+- **Problem:** `.gitignore` excludes `backend/tests/`, and `requirements.txt` does not include pytest even though the backend test module imports it.
+- **Evidence:** The ignore rule is `backend/tests/`; the dependency list has runtime packages only and no pytest entry.
+- **Impact:** Normal Git operations can omit the tests, and installing only declared dependencies is insufficient to run them.
+- **Suggested Fix:** Track the intended tests and declare the test-runner dependency in the project's test setup.
+- **Confidence:** Confirmed
+
+### [BUG-017] Planned webpage change detection and scheduled ingestion are absent
+
+- **Category:** Reliability
+- **Severity:** Medium
+- **Location:** Backend source tree; `backend/main.py:8-15, 68-74`
+- **Problem:** No change detector, scheduler, background task, or persistent change state was found. The only ingestion path is an explicit call to the one-off `main()` script.
+- **Evidence:** `PORTALS` contains the NSP source and `main()` processes it once; backend search found no scheduling, background-task, or change-detection implementation.
+- **Impact:** Source changes do not automatically trigger extraction/storage, and freshness depends on someone rerunning the script.
+- **Suggested Fix:** Implement and operationally invoke the planned detection/scheduling process when automatic refresh is required.
+- **Confidence:** Confirmed that the implementation is absent from inspected source; whether automatic refresh is currently required is a product decision.
+
+## Audit limitations
+
+- No database schema, migration, or live database access was available. Column types, nullability, uniqueness constraints, transaction behavior against the deployed schema, and existing data quality could not be verified.
+- No FastAPI routes, student-profile persistence, API authentication, or webpage-change detector were present in the inspected backend tree; these components could not be audited as implementations.
+- Live NSP markup, PDF link destinations, OCR performance, Gemini response behavior, and production network restrictions were not exercised. Findings dependent on those conditions are marked Potential where applicable.
+- The Gemini API key and database URL were present in `backend/.env`; values were not displayed. The file is not tracked by Git.

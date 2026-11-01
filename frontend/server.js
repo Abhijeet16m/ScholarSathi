@@ -18,7 +18,8 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const isVercel = process.env.VERCEL === '1';
 const isProduction = process.env.NODE_ENV === 'production' || isVercel;
-const fastApiBaseUrl = (process.env.FASTAPI_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+const fastApiBaseUrl = (process.env.FASTAPI_BASE_URL?.trim()
+  || (isVercel ? '' : 'http://127.0.0.1:8000')).replace(/\/+$/, '');
 const internalApiKey = process.env.INTERNAL_API_KEY || '';
 const fastApiTimeoutMs = 5000;
 
@@ -551,6 +552,9 @@ app.get('/api/scholarships/matches', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
   if (internalApiKey.length < 32) {
     return res.status(503).json({ error: 'Scholarship eligibility service is not configured.' });
+  }
+  if (!fastApiBaseUrl) {
+    return res.status(503).json({ error: 'Set FASTAPI_BASE_URL to the deployed scholarship backend URL.' });
   }
 
   try {
