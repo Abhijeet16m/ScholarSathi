@@ -42,6 +42,14 @@ function fillForm(profile) {
     const field = form.elements.namedItem(fieldName);
     if (!field) continue;
     const value = profile[profileKey];
+    if (fieldName === "domicile_state" && value) {
+      const savedState = String(value);
+      if (![...field.options].some(option => option.value === savedState)) {
+        field.add(new Option(`${savedState} (saved value)`, savedState));
+      }
+      field.value = savedState;
+      continue;
+    }
     if (fieldName === "has_disability" || fieldName === "is_orphan" || fieldName === "receives_other_scholarship") {
       field.value = value === "Yes" ? "true" : value === "No" ? "false" : "";
     } else {

@@ -50,12 +50,21 @@
   mobile.addEventListener("change", close);
 
   const badge = document.querySelector("#application-count, [data-application-count]");
-  if (badge) {
+  const pageLoadsApplications = document.getElementById("scholarship-grid")
+    || document.getElementById("applications-list");
+  if (badge && !pageLoadsApplications) {
     fetch("/api/applications", { credentials: "same-origin", headers: { Accept: "application/json" } })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => {
-        if (Array.isArray(data?.applications)) badge.textContent = String(data.applications.length);
+      .then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `The server returned ${response.status}.`);
+        if (!Array.isArray(data.applications)) throw new Error("The applications endpoint returned an invalid response.");
+        return data;
       })
-      .catch(() => {});
+      .then(data => { badge.textContent = String(data.applications.length); })
+      .catch(error => {
+        badge.textContent = "—";
+        badge.title = error.message || "Application count is unavailable.";
+        badge.setAttribute("aria-label", "Application count unavailable");
+      });
   }
 })();

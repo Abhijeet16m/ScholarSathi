@@ -18,6 +18,9 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const isVercel = process.env.VERCEL === '1';
 const isProduction = process.env.NODE_ENV === 'production' || isVercel;
+const fastApiBaseUrl = (process.env.FASTAPI_BASE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+const internalApiKey = process.env.INTERNAL_API_KEY || '';
+const fastApiTimeoutMs = 5000;
 
 for (const key of ['DATABASE_URL', 'SESSION_SECRET', 'OTP_SECRET', 'SMTP_USER', 'SMTP_APP_PASSWORD']) {
   if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
@@ -87,6 +90,12 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHea
 const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false });
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const cleanEmail = value => String(value || '').trim().toLowerCase();
+const PROFILE_ENUMS = Object.freeze({
+  genders: Object.freeze(['Female', 'Male', 'Other', 'Prefer not to say']),
+  categories: Object.freeze(['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other']),
+  qualifications: Object.freeze(['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other']),
+  courseLevels: Object.freeze(['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other']),
+});
 const textPage = (title, message, href = '/', linkText = 'Return to login', status = 200) => {
   const safeTitle = escapeHtml(title);
   const safeMessage = escapeHtml(message);
@@ -199,17 +208,13 @@ app.post('/api/auth/registration/request-otp', otpLimiter, async (req, res, next
       mobile_number: String(req.body.mobile_number || '').trim(),
       district: String(req.body.district || '').trim(),
     };
-    const validGenders = ['Female', 'Male', 'Other', 'Prefer not to say'];
-    const validCategories = ['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other'];
-    const validQualifications = ['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other'];
-    const validCourseLevels = ['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other'];
     const invalidOptionalNumber = [profile.annual_family_income, profile.qualification_marks, profile.course_year, profile.entrance_exam_rank].some(Number.isNaN);
     const invalidBoolean = ['has_disability', 'is_orphan', 'receives_other_scholarship'].some(key => !['', 'true', 'false'].includes(String(req.body[key] || '')));
     if (
       name.length < 2 || name.length > 120 || !emailPattern.test(email) || email.length > 254 ||
-      !validDateOfBirth(profile.date_of_birth) || !validGenders.includes(profile.gender) || !validCategories.includes(profile.category) ||
+      !validDateOfBirth(profile.date_of_birth) || !PROFILE_ENUMS.genders.includes(profile.gender) || !PROFILE_ENUMS.categories.includes(profile.category) ||
       !profile.domicile_state || profile.domicile_state.length > 100 || profile.annual_family_income === null || Number.isNaN(profile.annual_family_income) ||
-      !validQualifications.includes(profile.qualification_level) || !validCourseLevels.includes(profile.course_level) ||
+      !PROFILE_ENUMS.qualifications.includes(profile.qualification_level) || !PROFILE_ENUMS.courseLevels.includes(profile.course_level) ||
       !profile.course_name || profile.course_name.length > 160 || profile.course_year === null || Number.isNaN(profile.course_year) || invalidOptionalNumber ||
       profile.institution_name.length > 200 || profile.parent_occupation.length > 160 ||
       profile.father_name.length > 120 || profile.mother_name.length > 120 || profile.district.length > 100 ||
@@ -544,22 +549,44 @@ app.get('/api/auth/me', async (req, res, next) => {
 // so one student cannot request another student's eligibility results.
 app.get('/api/scholarships/matches', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
+  if (internalApiKey.length < 32) {
+    return res.status(503).json({ error: 'Scholarship eligibility service is not configured.' });
+  }
+
   try {
-    const result = await pool.query(
-      `SELECT m.*, scholarship.provider, scholarship.application_url,
-              scholarship.deadline, scholarship.scholarship_amount
-       FROM public.match_scholarships($1::bigint) AS m
-       LEFT JOIN public.scholarships AS scholarship
-         ON scholarship.id = m.scholarship_id
-       ORDER BY CASE m.eligibility_status
-         WHEN 'Eligible' THEN 0
-         WHEN 'Needs Verification' THEN 1
-         ELSE 2
-       END, m.matched_conditions DESC, m.scholarship_id`,
-      [req.session.studentId],
+    const upstream = await fetch(
+      `${fastApiBaseUrl}/api/students/${encodeURIComponent(String(req.session.studentId))}/scholarship-matches`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'X-Internal-Api-Key': internalApiKey,
+        },
+        signal: AbortSignal.timeout(fastApiTimeoutMs),
+      },
     );
-    return res.json({ matches: result.rows });
-  } catch (error) { next(error); }
+    if (!upstream.ok) {
+      console.error(`FastAPI eligibility service returned HTTP ${upstream.status}.`);
+      return res.status(502).json({ error: 'Scholarship eligibility service is unavailable.' });
+    }
+
+    let payload;
+    try {
+      payload = await upstream.json();
+    } catch {
+      return res.status(502).json({ error: 'Scholarship eligibility service returned an invalid response.' });
+    }
+    if (!payload || !Array.isArray(payload.matches)
+        || !payload.matches.every(match => match && typeof match === 'object' && !Array.isArray(match))) {
+      return res.status(502).json({ error: 'Scholarship eligibility service returned an invalid response.' });
+    }
+    return res.json({ matches: payload.matches });
+  } catch (error) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      return res.status(504).json({ error: 'Scholarship eligibility request timed out.' });
+    }
+    console.error('FastAPI eligibility request failed:', error);
+    return res.status(502).json({ error: 'Scholarship eligibility service is unavailable.' });
+  }
 });
 
 function toClientApplication(application) {
@@ -593,10 +620,33 @@ app.get('/api/applications', async (req, res, next) => {
 app.post('/api/applications', async (req, res, next) => {
   if (!req.session.studentId) return res.status(401).json({ error: 'Your sign-in session has expired.' });
   try {
-    const scholarshipKey = String(req.body.scholarshipKey || '').trim().toLowerCase();
-    const scholarshipName = String(req.body.scholarshipName || '').trim();
+    let scholarshipKey = String(req.body.scholarshipKey || '').trim().toLowerCase();
+    let scholarshipName = String(req.body.scholarshipName || '').trim();
+    if (!validScholarshipKey(scholarshipKey)) {
+      return res.status(400).json({ error: 'Provide a valid scholarship key and name.' });
+    }
+    const knownSchemeKey = scholarshipKey.match(/^scheme-(\d+)$/);
+    if (knownSchemeKey) {
+      const canonicalId = BigInt(knownSchemeKey[1]).toString();
+      const scheme = await pool.query(
+        'SELECT name FROM public.scholarships WHERE id = $1::bigint',
+        [canonicalId],
+      );
+      if (!scheme.rowCount) return res.status(404).json({ error: 'That scholarship is no longer available.' });
+      scholarshipKey = `scheme-${canonicalId}`;
+      scholarshipName = String(scheme.rows[0].name || '').trim();
+    }
     if (!validScholarshipKey(scholarshipKey) || !scholarshipName || scholarshipName.length > 200) {
       return res.status(400).json({ error: 'Provide a valid scholarship key and name.' });
+    }
+    const existing = await pool.query(
+      `SELECT scholarship_name FROM student_applications
+       WHERE student_id = $1 AND scholarship_key = $2`,
+      [req.session.studentId, scholarshipKey],
+    );
+    if (existing.rowCount
+        && existing.rows[0].scholarship_name.trim().toLocaleLowerCase() !== scholarshipName.toLocaleLowerCase()) {
+      return res.status(409).json({ error: 'This tracker key is already linked to a different scholarship.' });
     }
     const result = await pool.query(
       `INSERT INTO student_applications (student_id, scholarship_key, scholarship_name)
@@ -676,16 +726,12 @@ app.post('/api/auth/profile', async (req, res, next) => {
       mobile_number: String(req.body.mobile_number || '').trim(),
       district: String(req.body.district || '').trim(),
     };
-    const validGenders = ['Female', 'Male', 'Other', 'Prefer not to say'];
-    const validCategories = ['General', 'EWS', 'OBC-NCL', 'SEBC', 'SC', 'ST', 'Other'];
-    const validQualifications = ['Class 10', 'Class 12', 'Diploma', 'Undergraduate degree', 'Postgraduate degree', 'Other'];
-    const validCourseLevels = ['Pre-matric', 'Post-matric', 'Diploma', 'Undergraduate', 'Postgraduate', 'Research', 'Other'];
     const invalidOptionalNumber = [profile.annual_family_income, profile.qualification_marks, profile.course_year, profile.entrance_exam_rank].some(Number.isNaN);
     const invalidBoolean = ['has_disability', 'is_orphan', 'receives_other_scholarship'].some(key => !['', 'true', 'false'].includes(String(req.body[key] || '')));
     if (
-      !validDateOfBirth(profile.date_of_birth) || !validGenders.includes(profile.gender) || !validCategories.includes(profile.category) ||
+      !validDateOfBirth(profile.date_of_birth) || !PROFILE_ENUMS.genders.includes(profile.gender) || !PROFILE_ENUMS.categories.includes(profile.category) ||
       !profile.domicile_state || profile.domicile_state.length > 100 || profile.annual_family_income === null || Number.isNaN(profile.annual_family_income) ||
-      !validQualifications.includes(profile.qualification_level) || !validCourseLevels.includes(profile.course_level) ||
+      !PROFILE_ENUMS.qualifications.includes(profile.qualification_level) || !PROFILE_ENUMS.courseLevels.includes(profile.course_level) ||
       !profile.course_name || profile.course_name.length > 160 || profile.course_year === null || Number.isNaN(profile.course_year) || invalidOptionalNumber ||
       profile.institution_name.length > 200 || profile.parent_occupation.length > 160 || profile.father_name.length > 120 || profile.mother_name.length > 120 ||
       profile.district.length > 100 || (profile.mobile_number && !/^\d{10}$/.test(profile.mobile_number)) || invalidBoolean

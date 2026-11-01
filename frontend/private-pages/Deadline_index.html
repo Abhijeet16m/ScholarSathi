@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScholarSathi | Deadline Alerts</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="page-dashboard">
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/dashboard.html"><span class="brand-mark" aria-hidden="true">▤</span><span>Scholar<span class="accent">Sathi</span></span></a>
+    <div class="nav-label">Student workspace</div>
+    <nav class="nav-menu" aria-label="Main navigation">
+      <a class="nav-link" href="/dashboard.html"><span>Dashboard</span></a>
+      <a class="nav-link" href="/Discover_index.html"><span>Discover Scholarships</span></a>
+      <a class="nav-link" href="/Profile_index.html"><span>My Profile</span></a>
+      <a class="nav-link" href="/Application_index.html"><span>My Applications</span><span class="nav-badge" id="application-count">0</span></a>
+      <a class="nav-link" href="/documents.html"><span>Documents</span></a>
+      <a class="nav-link active" href="/Deadline_index.html" aria-current="page"><span>Deadline Alerts</span></a>
+      <a class="nav-link" href="/Privacy_index.html"><span>Privacy Center</span></a>
+    </nav>
+    <div class="privacy-note"><strong>Your data, your choice</strong><p>Profile details are saved to your account. Documents stay in this Chrome profile.</p></div>
+    <a class="sidebar-profile" href="/Profile_index.html"><span class="avatar" id="sidebar-initials">ST</span><span><strong id="sidebar-name">Student</strong><small>Student profile</small></span></a>
+  </aside>
+
+  <main class="main-panel">
+    <header class="topbar">
+      <div><div class="eyebrow">Student workspace</div><h1>Deadline Alerts</h1></div>
+      <div class="user-actions">
+        <a class="profile-summary" href="/Profile_index.html" aria-label="Open profile"><span class="avatar" id="avatar-initials">ST</span><span class="profile-name" id="profile-name">Student</span></a>
+        <button class="logout-button" id="logout-button" type="button" aria-label="Log out" title="Log out">⇥</button>
+      </div>
+    </header>
+
+    <section class="scholarship-section">
+      <div class="section-heading">
+        <span class="eyebrow">From your scholarship matches</span>
+        <h2>Upcoming deadlines</h2>
+        <p>Dates come from scholarship records returned for your profile. Confirm every deadline with the official scheme provider.</p>
+      </div>
+      <div class="results-meta">
+        <span id="deadline-count" aria-live="polite">Loading deadlines…</span>
+        <label for="deadline-filter">Show
+          <select id="deadline-filter">
+            <option value="all">All upcoming</option>
+            <option value="30">Next 30 days</option>
+            <option value="60">Next 60 days</option>
+          </select>
+        </label>
+      </div>
+      <div class="scholarship-grid" id="deadline-list" aria-live="polite"><p class="panel">Loading scholarship deadlines…</p></div>
+      <p class="match-feedback" id="deadline-feedback" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</div>
+<script src="/assets/js/deadline-alerts.js"></script>
+<script src="/assets/js/workspace-menu.js"></script>
+</body>
+</html>
