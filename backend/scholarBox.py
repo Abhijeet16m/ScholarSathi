@@ -265,7 +265,10 @@ def sync_scholarships(scholarships):
         cursor = conn.cursor()
 
         try:
+            count = 1
             for scholarship in scholarships:
+                print(f"Processing scholarship {count}/{len(scholarships)}")
+                count += 1
                 external_id = scholarship.get("_id")
 
                 cursor.execute(
