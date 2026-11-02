@@ -7,6 +7,7 @@ from google import genai
 from google.genai import types
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import time
 
 
 load_dotenv()
@@ -101,8 +102,10 @@ def extract_unknown_fields(prompt: str) -> dict:
             response_mime_type="application/json"
         )
     )
-
-    return json.loads(response.text)
+    try:
+        return json.loads(response.text)
+    except (json.JSONDecodeError, TypeError):
+        return extract_unknown_fields(prompt)
 
 
 def update_scholarship(scholarship, conn):
@@ -280,8 +283,8 @@ def sync_scholarships(scholarships):
                     continue
 
                 update_scholarship(scholarship, conn)
-
-            conn.commit()
+                conn.commit()
+                time.sleep(5)
 
         except Exception:
             conn.rollback()
