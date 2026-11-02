@@ -51,3 +51,18 @@ ALTER TABLE students ADD COLUMN IF NOT EXISTS district TEXT;
 
 -- Student document files and their file names are not stored in Neon.
 -- They stay in the student's local Scholar Assist Chrome extension storage.
+
+-- Track the student's interest and application checklist state per scholarship.
+-- The row itself means the student is interested; uploaded files are never stored here.
+CREATE TABLE IF NOT EXISTS student_applications (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  scholarship_key TEXT NOT NULL,
+  scholarship_name TEXT NOT NULL,
+  interested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  documents_checked BOOLEAN NOT NULL DEFAULT FALSE,
+  submitted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (student_id, scholarship_key)
+);

@@ -557,7 +557,8 @@ app.get('/api/scholarships/matches', async (req, res) => {
     );
     const upstream = await fetch(endpoint, {
       headers: { Accept: 'application/json', 'X-Internal-Api-Key': internalApiKey },
-      signal: AbortSignal.timeout(5000),
+      // Free Render services sleep after inactivity; allow enough time for a cold start.
+      signal: AbortSignal.timeout(55000),
     });
     const payload = await upstream.json().catch(() => null);
     if (!upstream.ok || !payload || !Array.isArray(payload.matches)) {

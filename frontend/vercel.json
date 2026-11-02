@@ -3,7 +3,8 @@
   "framework": "express",
   "functions": {
     "server.js": {
-      "includeFiles": "**/*.html"
+      "includeFiles": "**/*.html",
+      "maxDuration": 60
     }
   }
 }

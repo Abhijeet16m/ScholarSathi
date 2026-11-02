@@ -254,22 +254,37 @@ addForm.addEventListener("submit", async event => {
 });
 
 async function initialize() {
-  try {
-    const [student, applications] = await Promise.all([
-      requestJson("/api/auth/me"),
-      loadApplications(),
-    ]);
-    setStudentName(student.name || student.profile?.fullName);
-    renderApplications(applications);
-    void loadScholarshipOptions().catch(error => {
-      setFeedback(`Known scholarship suggestions are unavailable; manual tracking still works. ${error.message}`, true);
-    });
-  } catch (error) {
-    if (error.message !== "Your sign-in session has expired.") {
-      setApplicationCountUnavailable();
-      setFeedback(error.message, true);
+  const [studentResult, applicationsResult] = await Promise.allSettled([
+    requestJson("/api/auth/me"),
+    loadApplications(),
+  ]);
+
+  if (studentResult.status === "rejected") {
+    if (studentResult.reason.message !== "Your sign-in session has expired.") {
+      setStudentName("Student");
+      setFeedback(`Could not load your account details: ${studentResult.reason.message}`, true);
     }
+    return;
   }
+
+  const student = studentResult.value;
+  setStudentName(student.name || student.profile?.fullName);
+
+  if (applicationsResult.status === "fulfilled") {
+    renderApplications(applicationsResult.value);
+  } else {
+    setApplicationCountUnavailable();
+    const errorMessage = applicationsResult.reason.message || "Could not load your applications.";
+    const error = document.createElement("p");
+    error.className = "application-empty is-error";
+    error.textContent = `Your application list could not be loaded: ${errorMessage}`;
+    list.replaceChildren(error);
+    setFeedback(errorMessage, true);
+  }
+
+  void loadScholarshipOptions().catch(error => {
+    setFeedback(`Live scholarship suggestions are unavailable. ${error.message}`, true);
+  });
 }
 
 initialize();
