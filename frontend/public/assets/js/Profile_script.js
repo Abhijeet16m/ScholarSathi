@@ -48,7 +48,7 @@ function fillForm(profile) {
     const value = aliasedValue === undefined || aliasedValue === null || aliasedValue === ""
       ? profile[fieldName]
       : aliasedValue;
-    if (fieldName === "domicile_state" && value) {
+    if (fieldName === "domicile_state" && value && field instanceof HTMLSelectElement) {
       const savedState = String(value);
       if (![...field.options].some(option => option.value === savedState)) {
         field.add(new Option(`${savedState} (saved value)`, savedState));
