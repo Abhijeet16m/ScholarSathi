@@ -81,6 +81,24 @@ app.get([...protectedPages.keys()], (req, res, next) => {
 app.use(express.static(publicRoot, { index: 'index.html' }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: 'draft-8', legacyHeaders: false });
+// Count failed login attempts, but do not penalize a successful credential check
+// just because the student later needs to enter the emailed OTP. Keep this
+// separate from OTP resend/verification limits so those requests do not stack.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) => show(
+    res,
+    'Please wait before trying again',
+    'There have been several unsuccessful sign-in attempts. Wait a few minutes, then try again.',
+    429,
+    '/index.html',
+    'Return to login',
+  ),
+});
 const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: 'draft-8', legacyHeaders: false });
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const cleanEmail = value => String(value || '').trim().toLowerCase();
@@ -318,7 +336,7 @@ app.post('/api/auth/register', authLimiter, requireVerifiedRegistration, async (
   } catch (error) { next(error); }
 });
 
-app.post('/api/auth/login', authLimiter, otpLimiter, async (req, res, next) => {
+app.post('/api/auth/login', loginLimiter, async (req, res, next) => {
   try {
     const email = cleanEmail(req.body.email);
     const password = String(req.body.password || '');

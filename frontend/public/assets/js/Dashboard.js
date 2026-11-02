@@ -303,10 +303,28 @@
     }
   }
 
+  async function loadScholarshipMatches() {
+    try {
+      const result = await requestJson('/api/scholarships/matches');
+      if (!Array.isArray(result.matches)) throw new Error('The scholarship service returned an invalid response.');
+      matches = result.matches;
+      const eligible = matches.filter(item => item.eligibility_status === 'Eligible').length;
+      setText('scholarship-match-count', String(eligible));
+      renderMatches();
+      renderDeadlines();
+    } catch (error) {
+      setText('scholarship-match-count', '—');
+      setText('results-count', 'Unable to load scholarships');
+      setFeedback(error.message || 'Could not load scholarship matches.', true);
+      grid?.replaceChildren();
+    }
+  }
+
   async function initialize() {
-    const [identityResult, matchesResult, applicationsResult] = await Promise.allSettled([
+    // Do not make the page wait for Render's cold start before showing the
+    // signed-in student and application tracker.
+    const [identityResult, applicationsResult] = await Promise.allSettled([
       requestJson('/api/auth/me'),
-      requestJson('/api/scholarships/matches'),
       requestJson('/api/applications'),
     ]);
 
@@ -317,20 +335,6 @@
       return;
     }
     setIdentity(identityResult.value);
-
-    if (matchesResult.status === 'fulfilled' && Array.isArray(matchesResult.value.matches)) {
-      matches = matchesResult.value.matches;
-      const eligible = matches.filter(item => item.eligibility_status === 'Eligible').length;
-      setText('scholarship-match-count', String(eligible));
-    } else {
-      const error = matchesResult.status === 'rejected'
-        ? matchesResult.reason
-        : new Error('The scholarship service returned an invalid response.');
-      setText('scholarship-match-count', '—');
-      setText('results-count', 'Unable to load scholarships');
-      setFeedback(error.message || 'Could not load scholarship matches.', true);
-      grid?.replaceChildren();
-    }
 
     if (applicationsResult.status === 'fulfilled' && Array.isArray(applicationsResult.value.applications)) {
       const applications = applicationsResult.value.applications;
@@ -345,12 +349,8 @@
       setText('dashboard-applications-progress', 'Unavailable');
     }
 
-    if (matchesResult.status === 'fulfilled' && Array.isArray(matchesResult.value.matches)) {
-      renderMatches();
-      renderDeadlines();
-    }
-
     void loadDocumentReadiness();
+    void loadScholarshipMatches();
   }
 
   (document.getElementById('dashboard-search-form') || document.getElementById('search-form'))?.addEventListener('submit', event => {
