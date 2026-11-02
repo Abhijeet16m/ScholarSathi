@@ -41,7 +41,13 @@ function fillForm(profile) {
   for (const [fieldName, profileKey] of Object.entries(formFieldMap)) {
     const field = form.elements.namedItem(fieldName);
     if (!field) continue;
-    const value = profile[profileKey];
+    // Current API responses use camelCase aliases. Keep database-style
+    // snake_case as a fallback so an older deployed API response still fills
+    // the form instead of silently leaving populated fields blank.
+    const aliasedValue = profile[profileKey];
+    const value = aliasedValue === undefined || aliasedValue === null || aliasedValue === ""
+      ? profile[fieldName]
+      : aliasedValue;
     if (fieldName === "domicile_state" && value) {
       const savedState = String(value);
       if (![...field.options].some(option => option.value === savedState)) {
